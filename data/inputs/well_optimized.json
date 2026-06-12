@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "collected_at": "2026-05-31T23:45:00Z",
+  "configuration": {
+    "service_name": "northwind-commerce-search",
+    "subscription_id": "12345678-90ab-cdef-1234-567890abcdef",
+    "resource_group": "rg-northwind-prod",
+    "location": "centralus",
+    "deployment_mode": "dedicated",
+    "sku": "s1",
+    "replicas": 3,
+    "partitions": 1,
+    "high_density": false,
+    "availability_zones_enabled": false,
+    "private_endpoint_enabled": true,
+    "public_network_access_enabled": false,
+    "managed_identity_enabled": true,
+    "index_count": 6,
+    "indexer_count": 3,
+    "data_source_count": 3,
+    "skillset_count": 1,
+    "features_enabled": [
+      "ai_enrichment",
+      "indexers",
+      "private_endpoints",
+      "semantic_ranker"
+    ],
+    "semantic_ranker": {
+      "enabled": true,
+      "default_configuration_name": "default-product-semantic",
+      "query_cap_per_month": 2000000,
+      "prioritized_fields_configured": true
+    },
+    "vector_search": {
+      "enabled": false
+    },
+    "ai_enrichment": {
+      "enabled": true,
+      "skillset_count": 1,
+      "knowledge_store_enabled": false,
+      "cognitive_services_attached": true,
+      "image_extraction_enabled": false,
+      "custom_skill_count": 0
+    }
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query_volume": {
+      "avg_queries_per_day": 182000,
+      "peak_queries_per_day": 355000,
+      "avg_queries_per_second": 2.11,
+      "monthly_queries": 5460000
+    },
+    "total_index_size_gb": 63.4,
+    "document_count": 14800000,
+    "feature_usage": {
+      "semantic_query_percentage": 68.4,
+      "vector_query_percentage": 0,
+      "ai_enrichment_runs_per_day": 4,
+      "indexer_runs_per_day": 8,
+      "skill_invocations_per_day": 42000,
+      "integrated_vectorization_calls_per_day": 0
+    },
+    "latency": {
+      "p50_ms": 74,
+      "p95_ms": 148,
+      "p99_ms": 216
+    },
+    "avg_cpu_utilization_pct": 54.2,
+    "storage_quota_utilization_pct": 62.5,
+    "throttled_queries_per_day": 12,
+    "indexing_operations_per_day": 185000
+  },
+  "notes": [
+    "Three replicas maintain query SLA and planned maintenance coverage.",
+    "Semantic ranker is heavily used and aligned to workload shape."
+  ]
+}

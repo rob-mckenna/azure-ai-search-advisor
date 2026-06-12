@@ -1,0 +1,60 @@
+{
+  "agents": {
+    "thrawn": {
+      "persistent_name": "Thrawn",
+      "universe": "Star Wars",
+      "role": "Lead / Architect",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "lando": {
+      "persistent_name": "Lando",
+      "universe": "Star Wars",
+      "role": "Cost Modeling",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "mando": {
+      "persistent_name": "Mando",
+      "universe": "Star Wars",
+      "role": "API & Integration",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "ahsoka": {
+      "persistent_name": "Ahsoka",
+      "universe": "Star Wars",
+      "role": "Analysis",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "boba": {
+      "persistent_name": "Boba",
+      "universe": "Star Wars",
+      "role": "Data & Ingestion",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "mace": {
+      "persistent_name": "Mace",
+      "universe": "Star Wars",
+      "role": "Recommendations",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "wedge": {
+      "persistent_name": "Wedge",
+      "universe": "Star Wars",
+      "role": "Developer Experience",
+      "created_at": "2026-06-12T15:21:49-04:00",
+      "legacy_named": false,
+      "status": "active"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+resource_group_name    = "rg-search-advisor"
+location               = "eastus"
+project_name           = "searchadvisor"
+principal_type         = "User"
+model_deployment_name  = "gpt-4o"
+model_name             = "gpt-4o"
+model_version          = "2024-05-13"
+model_capacity         = 10
+deploy_default_model   = true
+ai_services_sku_name   = "S0"
+
+# Optional overrides:
+# ai_services_account_name = "searchadvisor-foundry-abc123"
+# ai_project_name          = "searchadvisor-project"
+# principal_id             = "00000000-0000-0000-0000-000000000000"
+
+tags = {
+  workload    = "azure-ai-search-advisor"
+  provisioner = "terraform"
+  environment = "dev"
+}

@@ -1,0 +1,44 @@
+{
+  "workload_id": "contoso-search-prod",
+  "analysis_timestamp": "2026-06-12T14:55:00Z",
+  "service": {
+    "name": "contoso-search-prod",
+    "region": "eastus2",
+    "sku": "standard-s2",
+    "hosting_mode": "dedicated",
+    "replicas": 4,
+    "partitions": 3
+  },
+  "topology": {
+    "replica_overprovisioned": true,
+    "suggested_replicas": 2,
+    "estimated_monthly_savings": 640.0,
+    "partition_overprovisioned": true,
+    "suggested_partitions": 2,
+    "estimated_partition_savings": 510.0,
+    "sku_downgrade_candidate": false
+  },
+  "features": {
+    "semantic_ranker_enabled": true,
+    "semantic_query_ratio": 0.04,
+    "estimated_semantic_monthly_cost": 185.0,
+    "vector_search_enabled": true,
+    "vector_optimization_opportunity": true,
+    "estimated_vector_monthly_savings": 132.0
+  },
+  "pricing": {
+    "switch_to_serverless_candidate": false,
+    "switch_to_dedicated_candidate": false,
+    "rationale": "Production traffic is steady enough to stay on dedicated pricing after right-sizing."
+  },
+  "highlights": [
+    "Average daytime query concurrency peaks at 14, well below the capacity provided by 4 replicas.",
+    "Index storage uses 41% of available partition capacity even during weekly ingestion spikes.",
+    "Only 4% of queries request semantic ranking despite the feature being enabled globally.",
+    "Vector indexes use 768-dimension embeddings for scenarios that only require coarse retrieval."
+  ],
+  "risks": [
+    "Scale changes must preserve the replica count required by the service-level agreement.",
+    "Vector tuning should be validated against recall targets before rollout to production."
+  ]
+}

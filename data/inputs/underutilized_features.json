@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "collected_at": "2026-05-31T23:45:00Z",
+  "configuration": {
+    "service_name": "fabrikam-knowledge-search",
+    "subscription_id": "66666666-7777-8888-9999-000000000000",
+    "resource_group": "rg-fabrikam-search",
+    "location": "westus3",
+    "deployment_mode": "dedicated",
+    "sku": "s1",
+    "replicas": 3,
+    "partitions": 2,
+    "high_density": false,
+    "availability_zones_enabled": false,
+    "private_endpoint_enabled": true,
+    "public_network_access_enabled": false,
+    "managed_identity_enabled": true,
+    "index_count": 12,
+    "indexer_count": 5,
+    "data_source_count": 4,
+    "skillset_count": 3,
+    "features_enabled": [
+      "ai_enrichment",
+      "indexers",
+      "knowledge_store",
+      "private_endpoints",
+      "semantic_ranker",
+      "vector_search"
+    ],
+    "semantic_ranker": {
+      "enabled": true,
+      "default_configuration_name": "content-semantic-config",
+      "query_cap_per_month": 1000000,
+      "prioritized_fields_configured": true
+    },
+    "vector_search": {
+      "enabled": true,
+      "algorithm": "hnsw",
+      "profile_count": 2,
+      "vectorizer": "azure_openai",
+      "integrated_vectorization_enabled": true,
+      "vector_index_count": 1
+    },
+    "ai_enrichment": {
+      "enabled": true,
+      "skillset_count": 3,
+      "knowledge_store_enabled": true,
+      "cognitive_services_attached": true,
+      "image_extraction_enabled": true,
+      "custom_skill_count": 1
+    }
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query_volume": {
+      "avg_queries_per_day": 24500,
+      "peak_queries_per_day": 41000,
+      "avg_queries_per_second": 0.28,
+      "monthly_queries": 735000
+    },
+    "total_index_size_gb": 72.8,
+    "document_count": 8900000,
+    "feature_usage": {
+      "semantic_query_percentage": 3.2,
+      "vector_query_percentage": 0.4,
+      "ai_enrichment_runs_per_day": 1,
+      "indexer_runs_per_day": 6,
+      "skill_invocations_per_day": 180,
+      "integrated_vectorization_calls_per_day": 24
+    },
+    "latency": {
+      "p50_ms": 58,
+      "p95_ms": 162,
+      "p99_ms": 244
+    },
+    "avg_cpu_utilization_pct": 27.6,
+    "storage_quota_utilization_pct": 39.7,
+    "throttled_queries_per_day": 0,
+    "indexing_operations_per_day": 64000
+  },
+  "notes": [
+    "Semantic, vector, and enrichment features are enabled across the estate.",
+    "Observed usage is very low relative to enabled premium capabilities."
+  ]
+}

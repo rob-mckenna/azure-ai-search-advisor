@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "collected_at": "2026-05-31T23:45:00Z",
+  "configuration": {
+    "service_name": "adventureworks-search-dev",
+    "subscription_id": "fedcba98-7654-3210-fedc-ba9876543210",
+    "resource_group": "rg-adventureworks-dev",
+    "location": "eastus",
+    "deployment_mode": "dedicated",
+    "sku": "basic",
+    "replicas": 2,
+    "partitions": 1,
+    "high_density": false,
+    "availability_zones_enabled": false,
+    "private_endpoint_enabled": false,
+    "public_network_access_enabled": true,
+    "managed_identity_enabled": true,
+    "index_count": 2,
+    "indexer_count": 1,
+    "data_source_count": 1,
+    "skillset_count": 0,
+    "features_enabled": [
+      "indexers"
+    ],
+    "semantic_ranker": {
+      "enabled": false
+    },
+    "vector_search": {
+      "enabled": false
+    },
+    "ai_enrichment": {
+      "enabled": false
+    }
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query_volume": {
+      "avg_queries_per_day": 2200,
+      "peak_queries_per_day": 6400,
+      "avg_queries_per_second": 0.03,
+      "monthly_queries": 66000
+    },
+    "total_index_size_gb": 3.8,
+    "document_count": 420000,
+    "feature_usage": {
+      "semantic_query_percentage": 0,
+      "vector_query_percentage": 0,
+      "ai_enrichment_runs_per_day": 0,
+      "indexer_runs_per_day": 1,
+      "skill_invocations_per_day": 0,
+      "integrated_vectorization_calls_per_day": 0
+    },
+    "latency": {
+      "p50_ms": 36,
+      "p95_ms": 71,
+      "p99_ms": 104
+    },
+    "avg_cpu_utilization_pct": 6.7,
+    "storage_quota_utilization_pct": 8.9,
+    "throttled_queries_per_day": 0,
+    "indexing_operations_per_day": 2200
+  },
+  "notes": [
+    "Development workload is tiny, bursty, and only indexed once per day.",
+    "Dedicated capacity is likely unnecessary for this traffic profile."
+  ]
+}

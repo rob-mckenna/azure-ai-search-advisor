@@ -1,0 +1,25 @@
+{
+  "universe_usage_history": [
+    {
+      "universe": "Star Wars",
+      "assignment_id": "azure-ai-search-advisor-001",
+      "timestamp": "2026-06-12T15:21:49-04:00",
+      "agent_count": 7
+    }
+  ],
+  "assignment_cast_snapshots": {
+    "azure-ai-search-advisor-001": {
+      "universe": "Star Wars",
+      "timestamp": "2026-06-12T15:21:49-04:00",
+      "cast": {
+        "thrawn": "Lead / Architect",
+        "lando": "Cost Modeling",
+        "mando": "API & Integration",
+        "ahsoka": "Analysis",
+        "boba": "Data & Ingestion",
+        "mace": "Recommendations",
+        "wedge": "Developer Experience"
+      }
+    }
+  }
+}

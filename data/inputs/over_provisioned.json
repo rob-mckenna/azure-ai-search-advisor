@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "collected_at": "2026-05-31T23:45:00Z",
+  "configuration": {
+    "service_name": "contoso-product-search-prod",
+    "subscription_id": "11111111-2222-3333-4444-555555555555",
+    "resource_group": "rg-contoso-search-prod",
+    "location": "eastus2",
+    "deployment_mode": "dedicated",
+    "sku": "s2",
+    "replicas": 6,
+    "partitions": 4,
+    "high_density": false,
+    "availability_zones_enabled": true,
+    "private_endpoint_enabled": true,
+    "public_network_access_enabled": false,
+    "managed_identity_enabled": true,
+    "index_count": 8,
+    "indexer_count": 2,
+    "data_source_count": 2,
+    "skillset_count": 0,
+    "features_enabled": [
+      "availability_zones",
+      "indexers",
+      "private_endpoints"
+    ],
+    "semantic_ranker": {
+      "enabled": false
+    },
+    "vector_search": {
+      "enabled": false
+    },
+    "ai_enrichment": {
+      "enabled": false
+    }
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query_volume": {
+      "avg_queries_per_day": 18000,
+      "peak_queries_per_day": 32000,
+      "avg_queries_per_second": 0.21,
+      "monthly_queries": 540000
+    },
+    "total_index_size_gb": 48.6,
+    "document_count": 12500000,
+    "feature_usage": {
+      "semantic_query_percentage": 0,
+      "vector_query_percentage": 0,
+      "ai_enrichment_runs_per_day": 0,
+      "indexer_runs_per_day": 4,
+      "skill_invocations_per_day": 0,
+      "integrated_vectorization_calls_per_day": 0
+    },
+    "latency": {
+      "p50_ms": 42,
+      "p95_ms": 88,
+      "p99_ms": 125
+    },
+    "avg_cpu_utilization_pct": 11.4,
+    "storage_quota_utilization_pct": 24.1,
+    "throttled_queries_per_day": 0,
+    "indexing_operations_per_day": 28000
+  },
+  "notes": [
+    "Catalog search workload has strong uptime requirements but modest traffic.",
+    "Replica and partition counts are materially higher than sustained demand requires."
+  ]
+}

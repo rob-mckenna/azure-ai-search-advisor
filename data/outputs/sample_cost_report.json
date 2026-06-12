@@ -1,0 +1,38 @@
+{
+  "service_name": "contoso-search-prod",
+  "currency": "USD",
+  "billing_period": "monthly",
+  "current_monthly_cost": 3894.5,
+  "cost_breakdown": {
+    "search_units": {
+      "sku": "standard-s2",
+      "replicas": 4,
+      "partitions": 3,
+      "monthly_cost": 3260.0
+    },
+    "semantic_ranker": {
+      "enabled": true,
+      "monthly_cost": 185.0
+    },
+    "vector_search": {
+      "storage_gb": 420,
+      "monthly_cost": 289.5
+    },
+    "monitoring_and_overhead": {
+      "monthly_cost": 160.0
+    }
+  },
+  "scenario_comparison": {
+    "recommended_monthly_cost": 2427.5,
+    "recommended_monthly_savings": 1467.0,
+    "recommended_annual_savings": 17604.0,
+    "confidence": "medium",
+    "notes": [
+      "Recommendation scenario assumes 2 replicas, 2 partitions, reduced vector footprint, and semantic ranker disabled until adoption improves.",
+      "Savings estimate excludes one-time operational effort required for reindexing and validation."
+    ],
+    "serverless_monthly_cost": 4510.0,
+    "serverless_monthly_savings": -615.5,
+    "dedicated_monthly_savings": 0.0
+  }
+}

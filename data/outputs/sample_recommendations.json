@@ -1,0 +1,62 @@
+{
+  "summary": "Generated 4 recommendations, including 3 high-priority actions and 2 quick wins.",
+  "estimated_savings": {
+    "monthly_usd": 1467.0,
+    "annual_usd": 17604.0,
+    "confidence": "medium"
+  },
+  "recommendations": [
+    {
+      "title": "Reduce replicas from 4 to 2",
+      "description": "Replica capacity is higher than current query concurrency and availability requirements demand. Downscaling releases unused search units without changing the indexing topology.",
+      "category": "right_sizing",
+      "priority": "high",
+      "impact_estimate": "Lower monthly capacity spend by about $640.",
+      "effort": "low",
+      "remediation_steps": [
+        "Validate the minimum replica count needed for SLA and query concurrency.",
+        "Apply the replica change in the Azure portal, ARM template, or IaC pipeline.",
+        "Monitor query latency and throttling for one full business cycle after the change."
+      ]
+    },
+    {
+      "title": "Reduce partitions from 3 to 2",
+      "description": "Storage and ingestion headroom materially exceed the current index footprint. Reducing partitions removes excess capacity while preserving the existing SKU.",
+      "category": "right_sizing",
+      "priority": "high",
+      "impact_estimate": "Reduce monthly search unit cost by about $510.",
+      "effort": "medium",
+      "remediation_steps": [
+        "Confirm index size, projected growth, and ingestion throughput still fit the smaller partition count.",
+        "Schedule the scale-down during a low-ingestion window to minimize operational risk.",
+        "Track indexing duration and storage utilization after the change."
+      ]
+    },
+    {
+      "title": "Optimize vector search configuration",
+      "description": "Vector search is enabled, but current index settings suggest unnecessary storage or compute overhead for the observed recall and latency targets.",
+      "category": "feature_guidance",
+      "priority": "high",
+      "impact_estimate": "Reduce vector-related spend by about $132 per month.",
+      "effort": "medium",
+      "remediation_steps": [
+        "Review embedding dimensionality, vector field count, and retention strategy.",
+        "Tune HNSW or vector profile settings to match the required recall and latency targets.",
+        "Rebuild the index in a lower environment and validate recall, latency, and storage savings."
+      ]
+    },
+    {
+      "title": "Disable semantic ranker on underused workloads",
+      "description": "Semantic ranker is enabled, but only a small share of queries use it. You are paying for a premium feature without seeing broad workload benefit.",
+      "category": "feature_guidance",
+      "priority": "medium",
+      "impact_estimate": "Avoid roughly $185 in monthly feature spend.",
+      "effort": "low",
+      "remediation_steps": [
+        "Confirm which indexes and applications actively depend on semantic ranking.",
+        "Disable semantic ranker for indexes or environments where usage is negligible.",
+        "Compare click-through rate and top-result relevance before and after the change."
+      ]
+    }
+  ]
+}
