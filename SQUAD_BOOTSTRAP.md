@@ -105,17 +105,26 @@ These are organizational mandates. Agents must follow these from the start — d
 
 ## Infrastructure as Code
 
-Provision the Microsoft Foundry backend automatically. Both Bicep and Terraform versions must be provided.
+Provision the Microsoft Foundry backend and hosting infrastructure automatically. Bicep, Terraform, and Azure Developer CLI (`azd`) deployment options must be provided.
 
 ### Directory structure
 
 ```
+azure.yaml                  # Azure Developer CLI project manifest
 infra/
-├── README.md               # Overview, comparison table, deploy instructions for both
-├── bicep/                  # Azure Bicep templates
-│   ├── main.bicep
+├── README.md               # Overview, comparison table, deploy instructions for all options
+├── main.bicep              # azd entry point (subscription-scoped, creates RG + all resources)
+├── main.parameters.json    # azd parameters (injected by azd)
+├── bicep/                  # Standalone Azure Bicep templates
+│   ├── main.bicep          # Resource-group-scoped standalone deployment
 │   ├── main.bicepparam
-│   └── modules/
+│   └── modules/            # Shared Bicep modules (used by both azd and standalone)
+│       ├── ai-foundry.bicep
+│       ├── role-assignment.bicep
+│       ├── container-registry.bicep
+│       ├── container-apps-environment.bicep
+│       ├── container-app.bicep
+│       └── static-web-app.bicep
 └── terraform/              # Terraform configuration
     ├── main.tf
     ├── variables.tf
@@ -129,10 +138,12 @@ infra/
 |-------------|--------|
 | Architecture | Microsoft Foundry **flat project** only — do NOT create a Hub (`kind: Hub`) resource |
 | Resources | Azure AI Services account → Model deployment → Foundry Project (`kind: Project`) → AAD connection |
+| Hosting | Container Apps (API) + Static Web Apps (UI) + Container Registry |
 | Auth | `disableLocalAuth: true` on AI Services — no API keys provisioned |
-| RBAC | Assign `Cognitive Services OpenAI User` to the deploying principal |
+| RBAC | Assign `Cognitive Services OpenAI User` to the deploying principal and container app managed identity |
 | Default model | Deploy `gpt-4o` as the default model |
 | Terraform provider | Use `azapi` for the Foundry project resource (flat model may not be in `azurerm` yet) |
+| azd support | `azure.yaml` at project root; `azd up` provisions everything and deploys API + UI |
 | Idempotent | Safe to re-run without errors |
 
 ### What NOT to create
@@ -311,7 +322,9 @@ Follow these steps in order:
 8. Create Infrastructure as Code:
    - `infra/bicep/` — Bicep templates with modules
    - `infra/terraform/` — Terraform config with azapi provider
-   - `infra/README.md` — comparison and deploy instructions for both
+   - `azure.yaml` + `infra/main.bicep` — Azure Developer CLI (`azd up`) support
+   - Hosting modules: Container Registry, Container Apps, Static Web Apps
+   - `infra/README.md` — comparison and deploy instructions for all options
    - Microsoft Foundry flat project only (no Hub)
 
 9. Create React UI:

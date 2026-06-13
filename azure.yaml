@@ -1,0 +1,23 @@
+name: azure-ai-search-advisor
+resourceGroup: rg-${AZURE_ENV_NAME}
+infra:
+  provider: bicep
+  path: infra
+services:
+  api:
+    project: .
+    language: python
+    host: containerapp
+    resourceName: api-${AZURE_ENV_NAME}
+    docker:
+      path: ./Dockerfile
+  web:
+    project: ./ui
+    dist: dist
+    language: js
+    host: staticwebapp
+    resourceName: web-${AZURE_ENV_NAME}
+hooks:
+  postprovision:
+    shell: sh
+    run: ./infra/hooks/postprovision.sh

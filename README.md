@@ -94,7 +94,7 @@ A React + TypeScript prototype lives in [`ui/`](ui/README.md). It uses Vite for 
 
 ## Infrastructure
 
-Infrastructure as Code is available under [`infra/`](infra/README.md) to provision the Microsoft Foundry backend. Choose [Bicep](infra/bicep/) or [Terraform](infra/terraform/) — both deploy the same flat-project resources.
+Infrastructure as Code is available under [`infra/`](infra/README.md) to provision the Microsoft Foundry backend and azd hosting resources. Choose [Azure Developer CLI](azure.yaml), [Bicep](infra/bicep/), or [Terraform](infra/terraform/) depending on whether you want full-stack deployment or standalone infrastructure provisioning.
 
 ## API reference
 
@@ -257,7 +257,7 @@ To connect this scaffold to a real model backend:
 
 1. Create a **Microsoft Foundry** project at https://ai.azure.com.
 2. Deploy a model (e.g., gpt-4o) within the Foundry project.
-3. Copy the project endpoint and model name into `.env`.
+3. Copy the project endpoint and model name into `.env`, or run `azd up` to provision the stack and export the endpoints into the azd environment.
 4. Ensure your identity has the appropriate RBAC role (e.g., `Cognitive Services OpenAI User`).
 5. Implement environment-backed settings in `src/azure_ai_search_advisor/core/config.py`.
 6. Complete client creation in `src/azure_ai_search_advisor/integrations/azure_ai_foundry/client.py`.
