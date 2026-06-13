@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import ValidationError
 
+from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
 from azure_ai_search_advisor.api.dependencies import get_cost_modeling_service
 from azure_ai_search_advisor.api.schemas import ErrorResponse, SimulateRequest, SimulateResponse
 from azure_ai_search_advisor.api.service_adapters import (
@@ -132,10 +133,12 @@ def simulate_cost_and_capacity(
         SimulateRequest,
         Body(openapi_examples=SIMULATE_REQUEST_EXAMPLES),
     ],
+    current_user: CurrentUser = Depends(get_current_user),
     cost_modeling_service: CostModelingService = Depends(get_cost_modeling_service),
 ) -> SimulateResponse:
     """Simulate cost and capacity scenarios for Azure AI Search."""
 
+    _ = current_user
     try:
         if request.cost_model_request is not None:
             cost_model = cost_modeling_service.simulate(request.cost_model_request)

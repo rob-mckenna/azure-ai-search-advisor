@@ -32,7 +32,6 @@ def estimate_feature_costs(request: FeatureCostInput) -> FeatureCostEstimate:
         2,
     )
 
-    # TODO: Split AI enrichment into skill-specific meters and storage/network side effects.
     line_items = [
         FeatureCostLineItem(
             feature_name="semantic_ranker",
@@ -48,7 +47,9 @@ def estimate_feature_costs(request: FeatureCostInput) -> FeatureCostEstimate:
             unit_price_usd=APPROX_AI_ENRICHMENT_PRICE_PER_1K_TRANSACTIONS_USD,
             usage_quantity=request.enrichment_transactions_per_month / 1000.0,
             estimated_monthly_cost_usd=enrichment_monthly_cost,
-            notes=["Placeholder for Azure AI services-backed enrichment pricing."],
+            notes=[
+                "Uses one blended enrichment rate and excludes downstream Azure AI services, storage, and network charges."
+            ],
         ),
         FeatureCostLineItem(
             feature_name="vector_storage",
@@ -56,7 +57,9 @@ def estimate_feature_costs(request: FeatureCostInput) -> FeatureCostEstimate:
             unit_price_usd=APPROX_VECTOR_STORAGE_PRICE_PER_GB_MONTH_USD,
             usage_quantity=request.vector_index_storage_gb,
             estimated_monthly_cost_usd=vector_storage_monthly_cost,
-            notes=["Approximate storage add-on placeholder for vector-heavy indexes."],
+            notes=[
+                "Estimates only vector index storage GB-month and excludes any extra search units needed to host larger indexes."
+            ],
         ),
     ]
 
@@ -69,6 +72,8 @@ def estimate_feature_costs(request: FeatureCostInput) -> FeatureCostEstimate:
         estimated_period_cost_usd=estimated_period_cost_usd,
         assumptions=[
             APPROXIMATE_PRICING_NOTICE,
-            "TODO: Incorporate feature bundles, free allowances, and external Azure service dependencies.",
+            "Semantic cost is estimated from paid semantic query volume without subtracting tier-specific free allowances.",
+            "AI enrichment cost uses a single per-1,000 transaction rate and does not model skill-specific billing differences.",
+            "Vector cost reflects configured GB-month storage only and excludes embedding generation or external model charges.",
         ],
     )

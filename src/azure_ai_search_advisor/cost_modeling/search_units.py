@@ -20,7 +20,6 @@ def estimate_search_unit_cost(request: SearchUnitCostInput) -> SearchUnitCostEst
     pricing_reference = get_pricing_reference(request.tier)
     search_units = calculate_search_units(request.replicas, request.partitions)
 
-    # TODO: Add reservation discounts, regional multipliers, and SKU-specific capacity limits.
     estimated_monthly_cost_usd = round(
         search_units * pricing_reference.monthly_cost_per_search_unit_usd,
         2,
@@ -35,9 +34,12 @@ def estimate_search_unit_cost(request: SearchUnitCostInput) -> SearchUnitCostEst
         monthly_cost_per_search_unit_usd=pricing_reference.monthly_cost_per_search_unit_usd,
         estimated_monthly_cost_usd=estimated_monthly_cost_usd,
         estimated_period_cost_usd=estimated_period_cost_usd,
-        assumptions=[APPROXIMATE_PRICING_NOTICE],
+        assumptions=[
+            APPROXIMATE_PRICING_NOTICE,
+            "Estimate assumes the configured replicas and partitions stay provisioned for the full modeled period.",
+        ],
         scaling_notes=[
             f"Computed as {request.replicas} replicas × {request.partitions} partitions.",
-            "TODO: Model autoscale behavior, burst scenarios, and tier-specific replica/partition ceilings.",
+            "Cost is based on list price per search unit for the selected tier and excludes reservations, autoscale changes, and regional price adjustments.",
         ],
     )

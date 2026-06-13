@@ -42,6 +42,12 @@ class CostModelingService:
             + feature_estimate.estimated_monthly_cost_usd,
             2,
         )
+        comparison_notes = self._build_comparison_notes(
+            dedicated_total,
+            serverless_total,
+            has_dedicated_model=dedicated_estimate is not None,
+            has_serverless_model=serverless_estimate is not None,
+        )
 
         breakdown = CostBreakdown(
             dedicated=dedicated_estimate,
@@ -50,7 +56,8 @@ class CostModelingService:
             dedicated_total_monthly_cost_usd=dedicated_total,
             serverless_total_monthly_cost_usd=serverless_total,
             assumptions=[
-                "TODO: Separate feature costs that apply only to dedicated or only to serverless workloads.",
+                "Feature add-on estimates are included in both dedicated and serverless totals to support a like-for-like comparison.",
+                "Dedicated estimates use provisioned search units, while serverless estimates use query-driven billable compute units.",
             ],
         )
         comparison = self.compare_options(
@@ -63,9 +70,7 @@ class CostModelingService:
         return CostModelResponse(
             breakdown=breakdown,
             comparison=comparison,
-            notes=[
-                "Scaffolded estimate only; replace placeholder assumptions with Azure pricing calculator inputs and telemetry.",
-            ],
+            notes=comparison_notes,
         )
 
     def compare_options(
@@ -83,12 +88,15 @@ class CostModelingService:
         )
 
         lower_cost_option = None
-        notes = [
-            "TODO: Incorporate performance, SLA, and scale constraints before making a pricing-model recommendation.",
-        ]
+        notes = self._build_comparison_notes(
+            dedicated_total_monthly_cost_usd,
+            serverless_total_monthly_cost_usd,
+            has_dedicated_model=has_dedicated_model,
+            has_serverless_model=has_serverless_model,
+        )
         if not (has_dedicated_model and has_serverless_model):
             notes.append(
-                "Comparison is partial because one pricing model input is missing; totals for the missing side include only shared feature placeholders."
+                "Comparison is partial because one pricing model input is missing; the opposite total reflects only shared feature add-ons."
             )
         elif dedicated_total_monthly_cost_usd < serverless_total_monthly_cost_usd:
             lower_cost_option = PricingModelOption.DEDICATED
@@ -102,3 +110,29 @@ class CostModelingService:
             lower_cost_option=lower_cost_option,
             notes=notes,
         )
+
+    def _build_comparison_notes(
+        self,
+        dedicated_total_monthly_cost_usd: float,
+        serverless_total_monthly_cost_usd: float,
+        *,
+        has_dedicated_model: bool,
+        has_serverless_model: bool,
+    ) -> list[str]:
+        notes = [
+            "Comparison is cost-only and excludes SLA, migration effort, latency targets, reservations, and regional pricing differences.",
+        ]
+        if has_dedicated_model and has_serverless_model:
+            if dedicated_total_monthly_cost_usd < serverless_total_monthly_cost_usd:
+                notes.append(
+                    "Dedicated is estimated to be cheaper by "
+                    f"${serverless_total_monthly_cost_usd - dedicated_total_monthly_cost_usd:.2f} per month."
+                )
+            elif serverless_total_monthly_cost_usd < dedicated_total_monthly_cost_usd:
+                notes.append(
+                    "Serverless is estimated to be cheaper by "
+                    f"${dedicated_total_monthly_cost_usd - serverless_total_monthly_cost_usd:.2f} per month."
+                )
+            else:
+                notes.append("Dedicated and serverless are estimated to have the same monthly cost.")
+        return notes

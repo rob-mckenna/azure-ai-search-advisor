@@ -7,3 +7,4 @@ services:
     environment:
       AZURE_AI_FOUNDRY_ENDPOINT: ${AZURE_AI_FOUNDRY_ENDPOINT:-https://your-project.services.ai.azure.com/}
       AZURE_AI_FOUNDRY_MODEL: ${AZURE_AI_FOUNDRY_MODEL:-gpt-4o}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}

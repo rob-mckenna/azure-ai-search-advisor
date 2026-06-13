@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import ValidationError
 
 from azure_ai_search_advisor.analysis.service import AnalysisRequest, AnalysisService
+from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
 from azure_ai_search_advisor.api.dependencies import get_analysis_service, get_ingestion_service
 from azure_ai_search_advisor.api.schemas import AnalyzeRequest, AnalyzeResponse, ErrorResponse
 from azure_ai_search_advisor.api.service_adapters import build_snapshot_payload, map_analysis_result_to_response
@@ -107,11 +108,13 @@ def analyze_search_configuration(
         AnalyzeRequest,
         Body(openapi_examples=ANALYZE_REQUEST_EXAMPLES),
     ],
+    current_user: CurrentUser = Depends(get_current_user),
     ingestion_service: IngestionService = Depends(get_ingestion_service),
     analysis_service: AnalysisService = Depends(get_analysis_service),
 ) -> AnalyzeResponse:
     """Analyze an Azure AI Search workload."""
 
+    _ = current_user
     try:
         snapshot = ingestion_service.ingest_payload(
             build_snapshot_payload(request.configuration, request.metrics)

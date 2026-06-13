@@ -7,8 +7,8 @@ import {
   signOutFromStaticWebApps,
   type StaticWebAppsPrincipal,
 } from "./services/auth";
-import { sendChatMessage } from "./services/foundryClient";
-import type { ChatMessage, Recommendation } from "./types";
+import { getAdvisorConnectionMode, sendChatMessage } from "./services/foundryClient";
+import type { ChatMessage, QuickAction, Recommendation } from "./types";
 
 const createMessage = (role: ChatMessage["role"], content: string): ChatMessage => ({
   id: crypto.randomUUID(),
@@ -17,23 +17,39 @@ const createMessage = (role: ChatMessage["role"], content: string): ChatMessage 
   timestamp: new Date().toISOString(),
 });
 
-const initialMessages: ChatMessage[] = [
-  createMessage(
-    "assistant",
-    "Hi — I’m the Azure AI Search Advisor prototype. Ask about cost, scale, features, or optimization trade-offs.",
-  ),
-];
+function createInitialMessages(connectionMode: "local" | "foundry"): ChatMessage[] {
+  return [
+    createMessage(
+      "assistant",
+      connectionMode === "local"
+        ? "Hi — I’m connected to the local FastAPI backend. Use a quick action or ask for analysis, recommendations, simulations, or health."
+        : "Hi — I’m the Azure AI Search Advisor prototype. Ask about cost, scale, features, or optimization trade-offs.",
+    ),
+  ];
+}
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const authMode = useMemo(() => getAuthMode(), []);
+  const advisorMode = useMemo(() => getAdvisorConnectionMode(), []);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => createInitialMessages(advisorMode));
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [principal, setPrincipal] = useState<StaticWebAppsPrincipal | null>(null);
-  const authMode = useMemo(() => getAuthMode(), []);
+  const quickActions = useMemo<QuickAction[]>(
+    () =>
+      advisorMode === "local"
+        ? [
+            { label: "Analyze sample service", prompt: "Analyze sample service" },
+            { label: "Get recommendations", prompt: "Get recommendations" },
+            { label: "Cost simulation", prompt: "Cost simulation" },
+          ]
+        : [],
+    [advisorMode],
+  );
 
   useEffect(() => {
-    if (authMode !== "static-web-apps") {
+    if (authMode !== "static-web-apps" || advisorMode !== "foundry") {
       return;
     }
 
@@ -43,7 +59,7 @@ export default function App() {
         const message = authError instanceof Error ? authError.message : "Unable to load Azure Static Web Apps session.";
         setError(message);
       });
-  }, [authMode]);
+  }, [advisorMode, authMode]);
 
   const handleSend = async (content: string) => {
     const userMessage = createMessage("user", content);
@@ -58,7 +74,7 @@ export default function App() {
       setMessages((currentMessages) => [...currentMessages, createMessage("assistant", response.message)]);
       setRecommendations(response.recommendations);
 
-      if (authMode === "static-web-apps") {
+      if (advisorMode === "foundry" && authMode === "static-web-apps") {
         const nextPrincipal = await getCurrentPrincipal();
         setPrincipal(nextPrincipal);
       }
@@ -77,14 +93,25 @@ export default function App() {
           <p className="eyebrow">Microsoft Foundry · React prototype</p>
           <h1>Azure AI Search Advisor</h1>
           <p className="subtle-text">
-            Chat with the advisor agent using Azure identity locally and Azure Static Web Apps auth when deployed.
+            {advisorMode === "local"
+              ? "Connected to the local FastAPI backend for development."
+              : "Chat with the advisor agent using Azure identity locally and Azure Static Web Apps auth when deployed."}
           </p>
         </div>
         <div className="header-actions">
-          <span className="auth-chip">
-            {authMode === "local-browser" ? "Local browser auth" : principal ? `Signed in as ${principal.userDetails}` : "Static Web Apps auth"}
+          <span className={`mode-chip ${advisorMode}`}>
+            {advisorMode === "local" ? "Local API mode" : "Foundry mode"}
           </span>
-          {authMode === "static-web-apps" ? (
+          <span className="auth-chip">
+            {advisorMode === "local"
+              ? "No auth required"
+              : authMode === "local-browser"
+                ? "Local browser auth"
+                : principal
+                  ? `Signed in as ${principal.userDetails}`
+                  : "Static Web Apps auth"}
+          </span>
+          {advisorMode === "foundry" && authMode === "static-web-apps" ? (
             principal ? (
               <button className="secondary-button" onClick={signOutFromStaticWebApps} type="button">
                 Sign out
@@ -105,6 +132,7 @@ export default function App() {
         isLoading={isLoading}
         messages={messages}
         onSend={handleSend}
+        quickActions={quickActions}
         recommendations={recommendations}
       />
     </div>

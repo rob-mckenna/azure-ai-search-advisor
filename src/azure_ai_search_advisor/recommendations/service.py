@@ -46,10 +46,7 @@ class RecommendationService:
         """Create a concise summary for downstream APIs and sample output."""
 
         if not recommendations:
-            return (
-                "No recommendations were generated yet. "
-                "TODO: handle low-signal workloads and confidence messaging."
-            )
+            return "No optimization opportunities identified for this workload."
 
         high_priority = sum(1 for item in recommendations if item.priority == "high")
         quick_wins = sum(1 for item in recommendations if item.effort == "low")

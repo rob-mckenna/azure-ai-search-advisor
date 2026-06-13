@@ -1,7 +1,7 @@
 import LoadingIndicator from "./LoadingIndicator";
 import MessageInput from "./MessageInput";
 import MessageList from "./MessageList";
-import type { ChatMessage, Recommendation } from "../types";
+import type { ChatMessage, QuickAction, Recommendation } from "../types";
 
 interface ChatWindowProps {
   messages: ChatMessage[];
@@ -9,6 +9,7 @@ interface ChatWindowProps {
   isLoading: boolean;
   disableInput?: boolean;
   onSend: (message: string) => Promise<void> | void;
+  quickActions?: QuickAction[];
 }
 
 export default function ChatWindow({
@@ -17,12 +18,34 @@ export default function ChatWindow({
   isLoading,
   disableInput = false,
   onSend,
+  quickActions = [],
 }: ChatWindowProps) {
   return (
     <main className="chat-layout">
       <section className="chat-panel">
         <MessageList messages={messages} />
         {isLoading ? <LoadingIndicator /> : null}
+        {quickActions.length > 0 ? (
+          <div className="quick-actions-panel">
+            <div className="quick-actions-header">
+              <strong>Quick actions</strong>
+              <span className="subtle-text">Local backend samples</span>
+            </div>
+            <div className="quick-actions-list">
+              {quickActions.map((quickAction) => (
+                <button
+                  className="secondary-button quick-action-button"
+                  disabled={disableInput}
+                  key={quickAction.label}
+                  onClick={() => void onSend(quickAction.prompt)}
+                  type="button"
+                >
+                  {quickAction.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <MessageInput disabled={disableInput} onSend={onSend} />
       </section>
 

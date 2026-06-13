@@ -17,7 +17,6 @@ def estimate_serverless_cost(request: ServerlessCostInput) -> ServerlessCostEsti
         2,
     )
 
-    # TODO: Refine with free grants, query complexity profiles, and rounding rules from Azure billing.
     estimated_monthly_cost_usd = round(
         (monthly_billable_compute_units / 1000.0) * APPROX_SERVERLESS_PRICE_PER_1K_COMPUTE_UNITS_USD,
         2,
@@ -32,6 +31,7 @@ def estimate_serverless_cost(request: ServerlessCostInput) -> ServerlessCostEsti
         estimated_period_cost_usd=estimated_period_cost_usd,
         assumptions=[
             APPROXIMATE_PRICING_NOTICE,
-            "TODO: Replace average compute units per query with workload-specific telemetry.",
+            "Monthly billable compute units are estimated as monthly queries multiplied by the average billable compute units per query.",
+            "Estimate excludes free grants, billing rounding behavior, and workload-specific query complexity variation.",
         ],
     )

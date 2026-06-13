@@ -10,6 +10,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import ValidationError
 
 from azure_ai_search_advisor.analysis.service import AnalysisRequest, AnalysisService
+from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
 from azure_ai_search_advisor.api.dependencies import (
     get_analysis_service,
     get_cost_modeling_service,
@@ -172,6 +173,7 @@ def recommend_optimizations(
         RecommendRequest,
         Body(openapi_examples=RECOMMEND_REQUEST_EXAMPLES),
     ],
+    current_user: CurrentUser = Depends(get_current_user),
     ingestion_service: IngestionService = Depends(get_ingestion_service),
     analysis_service: AnalysisService = Depends(get_analysis_service),
     cost_modeling_service: CostModelingService = Depends(get_cost_modeling_service),
@@ -179,6 +181,7 @@ def recommend_optimizations(
 ) -> RecommendResponse:
     """Generate optimization recommendations for an Azure AI Search workload."""
 
+    _ = current_user
     source = (
         RecommendationSource.ANALYSIS_INPUT
         if request.analysis is not None and request.configuration is None

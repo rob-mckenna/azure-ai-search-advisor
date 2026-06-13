@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
+from fastapi.testclient import TestClient
+from jose import jwt
+from jose.utils import base64url_encode
+
+from azure_ai_search_advisor.api import auth
+from azure_ai_search_advisor.main import create_app
+
 
 def _build_api_inputs(snapshot) -> tuple[dict, dict]:
     configuration = snapshot.configuration
@@ -167,3 +176,117 @@ def test_simulate_returns_cost_comparison(client, sample_snapshot) -> None:
     assert body["comparison"]["current_estimate"]["monthly_total"] > 0
     assert body["comparison"]["proposed_estimate"]["monthly_total"] > 0
     assert body["comparison"]["monthly_delta"] < 0
+
+
+def _build_valid_bearer_token() -> tuple[str, dict]:
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    public_numbers = private_key.public_key().public_numbers()
+
+    def _encode_number(value: int) -> str:
+        size = (value.bit_length() + 7) // 8
+        return base64url_encode(value.to_bytes(size, "big")).decode("utf-8")
+
+    jwk = {
+        "kty": "RSA",
+        "kid": "test-key",
+        "use": "sig",
+        "alg": "RS256",
+        "n": _encode_number(public_numbers.n),
+        "e": _encode_number(public_numbers.e),
+    }
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    token = jwt.encode(
+        {
+            "sub": "test-subject",
+            "name": "Test User",
+            "oid": "test-object-id",
+            "roles": ["advisor.user"],
+            "aud": "test-client-id",
+            "iss": "https://login.microsoftonline.com/test-tenant-id/v2.0",
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int(expires_at.timestamp()),
+        },
+        private_pem,
+        algorithm="RS256",
+        headers={"kid": "test-key"},
+    )
+    return token, jwk
+
+
+def test_protected_routes_require_bearer_token_when_auth_enabled(monkeypatch, sample_snapshot) -> None:
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AZURE_TENANT_ID", "test-tenant-id")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "test-client-id")
+    auth._jwks_cache._keys = None
+    auth._jwks_cache._metadata = None
+
+    response = TestClient(create_app()).post(
+        "/analyze",
+        json={
+            "configuration": configuration,
+            "metrics": metrics,
+            "include_cost_signals": True,
+            "include_feature_assessment": True,
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+    assert response.json()["message"] == "Bearer token is required."
+
+
+def test_health_stays_unauthenticated_when_auth_enabled(monkeypatch) -> None:
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AZURE_TENANT_ID", "test-tenant-id")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "test-client-id")
+    auth._jwks_cache._keys = None
+    auth._jwks_cache._metadata = None
+
+    response = TestClient(create_app()).get("/health")
+
+    assert response.status_code == 200
+
+
+def test_protected_routes_accept_valid_entra_token(monkeypatch, sample_snapshot) -> None:
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    token, jwk = _build_valid_bearer_token()
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AZURE_TENANT_ID", "test-tenant-id")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "test-client-id")
+    auth._jwks_cache._keys = None
+    auth._jwks_cache._metadata = None
+    monkeypatch.setattr(
+        auth,
+        "_fetch_openid_metadata",
+        lambda tenant_id: {
+            "issuer": f"https://login.microsoftonline.com/{tenant_id}/v2.0",
+            "jwks_uri": "https://entra.example.test/discovery/keys",
+        },
+    )
+    monkeypatch.setattr(
+        auth,
+        "_fetch_json",
+        lambda url: {"keys": [jwk]},
+    )
+
+    response = TestClient(create_app()).post(
+        "/analyze",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "configuration": configuration,
+            "metrics": metrics,
+            "include_cost_signals": True,
+            "include_feature_assessment": True,
+        },
+    )
+
+    assert response.status_code == 200

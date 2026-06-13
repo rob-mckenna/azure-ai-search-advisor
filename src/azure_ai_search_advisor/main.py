@@ -1,5 +1,7 @@
 """Application entrypoint for Azure AI Search Advisor."""
 
+from collections.abc import Mapping
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -15,6 +17,7 @@ def _json_error_response(
     error_code: str,
     message: str,
     details: list[ErrorDetail] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     """Create a standardized JSON error response."""
 
@@ -24,7 +27,11 @@ def _json_error_response(
         status_code=status_code,
         details=details or [],
     )
-    return JSONResponse(status_code=status_code, content=payload.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=status_code,
+        content=payload.model_dump(mode="json"),
+        headers=dict(headers or {}),
+    )
 
 
 def create_app() -> FastAPI:
@@ -73,6 +80,7 @@ def create_app() -> FastAPI:
             status_code=exc.status_code,
             error_code="http_error",
             message=str(exc.detail),
+            headers=exc.headers,
         )
 
     app.include_router(analyze.router)

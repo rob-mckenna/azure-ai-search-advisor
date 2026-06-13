@@ -13,6 +13,11 @@ export interface Recommendation {
   priority?: string;
 }
 
+export interface QuickAction {
+  label: string;
+  prompt: string;
+}
+
 export interface ChatResponse {
   message: string;
   recommendations: Recommendation[];
