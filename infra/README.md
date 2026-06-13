@@ -118,6 +118,26 @@ terraform apply
 
 ---
 
+## CI Validation
+
+Infrastructure pull requests and pushes to `main` that touch `infra/**` or `azure.yaml` run GitHub Actions validation automatically:
+
+- **Bicep validation:** `az bicep build` compiles both `infra/main.bicep` and `infra/bicep/main.bicep`, and `az bicep lint` reports lint findings.
+- **Terraform validation:** `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate` run for `infra/terraform`.
+- **azd preview on PRs:** pull requests also run `azd provision --preview --no-prompt` in the gated `preview` GitHub environment so reviewers can inspect the planned infrastructure changes in the job summary.
+
+### Configure the `preview` GitHub environment
+
+Create a GitHub Actions environment named `preview` and add these **environment variables** for workload identity federation:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+
+No API keys are used. The workflow relies on `azure/login@v2` with `id-token: write`, so make sure the corresponding Azure federated credential trusts this repository and environment before enabling the preview job.
+
+---
+
 ## App configuration
 
 After deployment (any tool), copy the output endpoint into `.env`:

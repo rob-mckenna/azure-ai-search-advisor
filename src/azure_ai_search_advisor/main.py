@@ -9,8 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from azure_ai_search_advisor import __version__
-from azure_ai_search_advisor.api.routers import analyze, health, recommend, simulate
+from azure_ai_search_advisor.api.middleware import CorrelationIdMiddleware
+from azure_ai_search_advisor.api.routers import analyze, discover, health, recommend, simulate
 from azure_ai_search_advisor.api.schemas import ErrorDetail, ErrorResponse
+from azure_ai_search_advisor.core.logging import configure_logging
 
 
 def _json_error_response(
@@ -38,6 +40,7 @@ def _json_error_response(
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+    configure_logging()
     app = FastAPI(
         title="Azure AI Search Advisor",
         version=__version__,
@@ -63,8 +66,14 @@ def create_app() -> FastAPI:
                 "name": "health",
                 "description": "Operational health and readiness probe endpoints.",
             },
+            {
+                "name": "discovery",
+                "description": "Discover and analyze live Azure AI Search services using Azure credentials.",
+            },
         ],
     )
+
+    app.add_middleware(CorrelationIdMiddleware)
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_exception_handler(
@@ -102,6 +111,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(analyze.router)
+    app.include_router(discover.router)
     app.include_router(recommend.router)
     app.include_router(simulate.router)
     app.include_router(health.router)

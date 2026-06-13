@@ -94,6 +94,9 @@ class AnalysisService:
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
         """Run all analyzers and aggregate their findings."""
+        if request.configuration is None or request.metrics is None:
+            return AnalysisResult()
+
         provisioning_result = self._provisioning_analyzer.analyze(
             ProvisioningAnalysisInput(
                 configuration=request.configuration,

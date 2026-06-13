@@ -343,6 +343,39 @@ class SearchWorkloadMetrics(ApiModel):
     )
 
 
+class DiscoveredServiceSummary(ApiModel):
+    """Live Azure AI Search service discovered from Azure Resource Graph."""
+
+    name: str = Field(description="Azure AI Search service name.")
+    resource_group: str = Field(description="Azure resource group containing the service.")
+    subscription_id: str = Field(description="Azure subscription identifier.")
+    location: str = Field(description="Azure region hosting the service.")
+    sku: str | None = Field(default=None, description="Discovered service SKU or tier label.")
+    replica_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Replica count reported by Azure for dedicated services.",
+    )
+    partition_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Partition count reported by Azure for dedicated services.",
+    )
+
+
+class DiscoverResponse(ApiModel):
+    """Response for GET /discover."""
+
+    services: list[DiscoveredServiceSummary] = Field(
+        default_factory=list,
+        description="Azure AI Search services visible to the caller.",
+    )
+    notes: list[str] = Field(
+        default_factory=list,
+        description="Discovery notes or caveats for the caller.",
+    )
+
+
 class AnalyzeRequest(ApiModel):
     """Payload for POST /analyze."""
 

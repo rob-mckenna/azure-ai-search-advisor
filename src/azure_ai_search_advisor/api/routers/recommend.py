@@ -17,6 +17,7 @@ from azure_ai_search_advisor.api.dependencies import (
     get_ingestion_service,
     get_recommendation_service,
 )
+from azure_ai_search_advisor.api.rate_limit import check_rate_limit
 from azure_ai_search_advisor.api.schemas import (
     ErrorResponse,
     RecommendRequest,
@@ -34,7 +35,11 @@ from azure_ai_search_advisor.cost_modeling.service import CostModelingService
 from azure_ai_search_advisor.ingestion.service import IngestionService
 from azure_ai_search_advisor.recommendations.service import RecommendationService
 
-router = APIRouter(prefix="/recommend", tags=["recommendations"])
+router = APIRouter(
+    prefix="/recommend",
+    tags=["recommendations"],
+    dependencies=[Depends(check_rate_limit)],
+)
 
 RECOMMEND_REQUEST_EXAMPLES = {
     "from-analysis": {

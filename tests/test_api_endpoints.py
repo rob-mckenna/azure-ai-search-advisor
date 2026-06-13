@@ -76,9 +76,17 @@ def test_health_returns_200(client) -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
+    assert response.headers["X-Correlation-ID"]
     body = response.json()
     assert body["status"] == "healthy"
     assert body["service"] == "azure-ai-search-advisor"
+
+
+def test_health_echoes_supplied_correlation_id(client) -> None:
+    response = client.get("/health", headers={"X-Correlation-ID": "test-correlation-id"})
+
+    assert response.status_code == 200
+    assert response.headers["X-Correlation-ID"] == "test-correlation-id"
 
 
 
@@ -254,6 +262,55 @@ def test_health_stays_unauthenticated_when_auth_enabled(monkeypatch) -> None:
     response = TestClient(create_app()).get("/health")
 
     assert response.status_code == 200
+
+
+def test_protected_routes_are_rate_limited_when_enabled(monkeypatch, sample_snapshot) -> None:
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_REQUESTS", "1")
+    monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
+    client = TestClient(create_app())
+    headers = {"X-Forwarded-For": "203.0.113.10"}
+
+    first_response = client.post(
+        "/analyze",
+        headers=headers,
+        json={
+            "configuration": configuration,
+            "metrics": metrics,
+            "include_cost_signals": True,
+            "include_feature_assessment": True,
+        },
+    )
+    second_response = client.post(
+        "/analyze",
+        headers=headers,
+        json={
+            "configuration": configuration,
+            "metrics": metrics,
+            "include_cost_signals": True,
+            "include_feature_assessment": True,
+        },
+    )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 429
+    assert second_response.headers["Retry-After"] == "60"
+    assert second_response.json()["message"] == "Rate limit exceeded. Try again later."
+
+
+def test_health_is_not_rate_limited(monkeypatch) -> None:
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_REQUESTS", "1")
+    monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
+    client = TestClient(create_app())
+    headers = {"X-Forwarded-For": "203.0.113.11"}
+
+    first_response = client.get("/health", headers=headers)
+    second_response = client.get("/health", headers=headers)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
 
 
 def test_protected_routes_accept_valid_entra_token(monkeypatch, sample_snapshot) -> None:

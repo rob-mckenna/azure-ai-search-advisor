@@ -18,7 +18,7 @@ class AzureSearchServiceSnapshot(AdvisorModel):
     schema_version: str = Field(default="1.0")
     collected_at: datetime
     configuration: AzureSearchServiceConfiguration
-    metrics: AzureSearchServiceMetrics
+    metrics: AzureSearchServiceMetrics | None = None
     notes: list[str] = Field(default_factory=list)
 
     @validator("schema_version")

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
 from azure_ai_search_advisor.api.dependencies import get_cost_modeling_service
+from azure_ai_search_advisor.api.rate_limit import check_rate_limit
 from azure_ai_search_advisor.api.schemas import ErrorResponse, SimulateRequest, SimulateResponse
 from azure_ai_search_advisor.api.service_adapters import (
     apply_proposed_changes,
@@ -21,7 +22,11 @@ from azure_ai_search_advisor.api.service_adapters import (
 from azure_ai_search_advisor.cost_modeling.service import CostModelingService
 from azure_ai_search_advisor.models import PricingModelOption
 
-router = APIRouter(prefix="/simulate", tags=["simulation"])
+router = APIRouter(
+    prefix="/simulate",
+    tags=["simulation"],
+    dependencies=[Depends(check_rate_limit)],
+)
 
 SIMULATE_REQUEST_EXAMPLES = {
     "reduce-replicas": {

@@ -6,6 +6,7 @@ from functools import lru_cache
 
 from azure_ai_search_advisor.analysis.service import AnalysisService
 from azure_ai_search_advisor.cost_modeling.service import CostModelingService
+from azure_ai_search_advisor.ingestion.live_ingestion_service import LiveIngestionService
 from azure_ai_search_advisor.ingestion.service import IngestionService
 from azure_ai_search_advisor.recommendations.service import RecommendationService
 
@@ -36,3 +37,10 @@ def get_cost_modeling_service() -> CostModelingService:
     """Provide the cost modeling service dependency."""
 
     return CostModelingService()
+
+
+@lru_cache(maxsize=1)
+def get_live_ingestion_service() -> LiveIngestionService:
+    """Provide the live Azure ingestion service dependency."""
+
+    return LiveIngestionService()

@@ -108,7 +108,7 @@ class OrchestratorAgent:
             include_recommendations=include_recommendations,
         )
 
-        resolved_snapshot = self._resolve_snapshot(
+        resolved_snapshot = self.resolve_snapshot(
             payload=payload,
             snapshot=snapshot,
             snapshot_path=snapshot_path,
@@ -142,7 +142,7 @@ class OrchestratorAgent:
         return OrchestratorResponse(
             user_query=user_query,
             plan=plan,
-            summary=self._build_summary(
+            summary=self.build_summary(
                 analysis=analysis_result,
                 cost=cost_result,
                 recommendations=recommendation_result,
@@ -153,7 +153,7 @@ class OrchestratorAgent:
             recommendations=recommendation_result,
             notes=[
                 'Local execution uses deterministic service chaining so the API layer and agent layer share the same business services.',
-                'Will migrate to Microsoft Agent Framework orchestration primitives when the SDK surface is finalized.',
+                'Framework mode is available through the orchestration registry when Microsoft Agent Framework support is enabled.',
             ],
         )
 
@@ -166,7 +166,7 @@ class OrchestratorAgent:
             self.recommendation_agent.config.name: self.recommendation_agent.config.tools,
         }
 
-    def _resolve_snapshot(
+    def resolve_snapshot(
         self,
         *,
         payload: Mapping[str, Any] | None,
@@ -181,7 +181,7 @@ class OrchestratorAgent:
             return self.ingestion_agent.ingest_config_file(snapshot_path)
         return None
 
-    def _build_summary(
+    def build_summary(
         self,
         *,
         analysis: AnalysisResult,

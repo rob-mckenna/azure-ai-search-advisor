@@ -241,6 +241,15 @@ def apply_proposed_changes(
 
 def map_analysis_result_to_response(result: AnalysisResult) -> AnalyzeResponse:
     """Map the domain analysis result into the HTTP response contract."""
+    return map_analysis_result_to_response_with_notes(result)
+
+
+def map_analysis_result_to_response_with_notes(
+    result: AnalysisResult,
+    *,
+    extra_notes: list[str] | None = None,
+) -> AnalyzeResponse:
+    """Map the domain analysis result into the HTTP response contract."""
 
     findings = [_map_analysis_finding(item, index) for index, item in enumerate(result.findings, start=1)]
     highest_severity = max(
@@ -268,6 +277,7 @@ def map_analysis_result_to_response(result: AnalysisResult) -> AnalyzeResponse:
         findings=findings,
         notes=[
             "Results combine the current analysis service plus lightweight API-to-domain normalization.",
+            *(extra_notes or []),
         ],
     )
 
