@@ -1,0 +1,62 @@
+{
+  "configuration": {
+    "service_name": "litware-media-search",
+    "region": "westeurope",
+    "capacity": {
+      "pricing_model": "dedicated",
+      "sku": "standard2",
+      "replica_count": 3,
+      "partition_count": 4,
+      "zone_redundancy_enabled": true
+    },
+    "features": {
+      "semantic_ranker_enabled": true,
+      "vector_search_enabled": true,
+      "ai_enrichment_enabled": true,
+      "knowledge_store_enabled": false
+    },
+    "index_topology": {
+      "index_count": 8,
+      "indexer_count": 6,
+      "skillset_count": 4,
+      "total_document_count": 8000000,
+      "total_index_size_gb": 280.0,
+      "vector_index_size_gb": 95.0
+    },
+    "security": {
+      "api_keys_enabled": false,
+      "managed_identity_enabled": true,
+      "private_endpoint_enabled": true,
+      "customer_managed_keys_enabled": false
+    },
+    "notes": [
+      "Real-time content publishing pipeline",
+      "AI enrichment extracts entities, sentiment, and image tags",
+      "Multi-language content (EN, DE, FR, ES)"
+    ]
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query": {
+      "average_queries_per_second": 55.0,
+      "peak_queries_per_second": 180.0,
+      "monthly_query_volume": 14200000,
+      "p95_query_latency_ms": 95.0,
+      "cache_hit_ratio": 0.52
+    },
+    "indexing": {
+      "daily_document_updates": 500000,
+      "full_rebuilds_per_month": 1,
+      "average_indexing_latency_minutes": 18.0
+    },
+    "utilization": {
+      "replica_utilization_percent": 62.0,
+      "partition_utilization_percent": 70.0,
+      "storage_utilization_percent": 70.0,
+      "semantic_queries_per_day": 320000,
+      "vector_queries_per_day": 180000
+    }
+  },
+  "include_cost_signals": true,
+  "include_feature_assessment": true
+}

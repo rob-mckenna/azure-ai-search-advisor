@@ -1,0 +1,58 @@
+{
+  "configuration": {
+    "service_name": "adventure-works-poc-search",
+    "region": "southcentralus",
+    "capacity": {
+      "pricing_model": "dedicated",
+      "sku": "standard",
+      "replica_count": 2,
+      "partition_count": 1,
+      "zone_redundancy_enabled": false
+    },
+    "features": {
+      "semantic_ranker_enabled": true,
+      "vector_search_enabled": true,
+      "ai_enrichment_enabled": true,
+      "knowledge_store_enabled": true
+    },
+    "index_topology": {
+      "index_count": 3,
+      "indexer_count": 2,
+      "skillset_count": 2,
+      "total_document_count": 150000,
+      "total_index_size_gb": 4.2,
+      "vector_index_size_gb": 1.8
+    },
+    "security": {
+      "api_keys_enabled": true,
+      "managed_identity_enabled": false,
+      "private_endpoint_enabled": false,
+      "customer_managed_keys_enabled": false
+    },
+    "notes": ["POC from Q1 2024, unclear if still needed"]
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query": {
+      "average_queries_per_second": 0.02,
+      "peak_queries_per_second": 0.5,
+      "monthly_query_volume": 52,
+      "p95_query_latency_ms": 15.0,
+      "cache_hit_ratio": 0.0
+    },
+    "indexing": {
+      "daily_document_updates": 0,
+      "full_rebuilds_per_month": 0,
+      "average_indexing_latency_minutes": 0
+    },
+    "utilization": {
+      "replica_utilization_percent": 0.5,
+      "partition_utilization_percent": 21.0,
+      "storage_utilization_percent": 16.8,
+      "semantic_queries_per_day": 0,
+      "vector_queries_per_day": 0
+    }
+  },
+  "include_cost_signals": true,
+  "include_feature_assessment": true
+}

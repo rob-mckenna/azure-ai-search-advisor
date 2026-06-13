@@ -1,0 +1,62 @@
+{
+  "configuration": {
+    "service_name": "fabrikam-saas-search",
+    "region": "centralus",
+    "capacity": {
+      "pricing_model": "dedicated",
+      "sku": "standard3",
+      "replica_count": 6,
+      "partition_count": 3,
+      "zone_redundancy_enabled": true
+    },
+    "features": {
+      "semantic_ranker_enabled": true,
+      "vector_search_enabled": true,
+      "ai_enrichment_enabled": false,
+      "knowledge_store_enabled": false
+    },
+    "index_topology": {
+      "index_count": 150,
+      "indexer_count": 150,
+      "skillset_count": 0,
+      "total_document_count": 45000000,
+      "total_index_size_gb": 520.0,
+      "vector_index_size_gb": 180.0
+    },
+    "security": {
+      "api_keys_enabled": false,
+      "managed_identity_enabled": true,
+      "private_endpoint_enabled": true,
+      "customer_managed_keys_enabled": false
+    },
+    "notes": [
+      "150 tenants, isolated indexes per tenant",
+      "Batch indexing window: 2AM-6AM UTC",
+      "SLA requires 99.99% uptime"
+    ]
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query": {
+      "average_queries_per_second": 320.0,
+      "peak_queries_per_second": 800.0,
+      "monthly_query_volume": 82000000,
+      "p95_query_latency_ms": 65.0,
+      "cache_hit_ratio": 0.45
+    },
+    "indexing": {
+      "daily_document_updates": 2000000,
+      "full_rebuilds_per_month": 0,
+      "average_indexing_latency_minutes": 12.0
+    },
+    "utilization": {
+      "replica_utilization_percent": 68.0,
+      "partition_utilization_percent": 87.0,
+      "storage_utilization_percent": 86.7,
+      "semantic_queries_per_day": 500000,
+      "vector_queries_per_day": 1200000
+    }
+  },
+  "include_cost_signals": true,
+  "include_feature_assessment": true
+}

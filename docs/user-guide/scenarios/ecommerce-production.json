@@ -1,0 +1,58 @@
+{
+  "configuration": {
+    "service_name": "contoso-shop-search",
+    "region": "eastus",
+    "capacity": {
+      "pricing_model": "dedicated",
+      "sku": "standard",
+      "replica_count": 3,
+      "partition_count": 1,
+      "zone_redundancy_enabled": true
+    },
+    "features": {
+      "semantic_ranker_enabled": true,
+      "vector_search_enabled": false,
+      "ai_enrichment_enabled": false,
+      "knowledge_store_enabled": false
+    },
+    "index_topology": {
+      "index_count": 2,
+      "indexer_count": 1,
+      "skillset_count": 0,
+      "total_document_count": 500000,
+      "total_index_size_gb": 12.5,
+      "vector_index_size_gb": 0
+    },
+    "security": {
+      "api_keys_enabled": false,
+      "managed_identity_enabled": true,
+      "private_endpoint_enabled": false,
+      "customer_managed_keys_enabled": false
+    },
+    "notes": ["Holiday season peaks at 3x normal traffic"]
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query": {
+      "average_queries_per_second": 85.0,
+      "peak_queries_per_second": 250.0,
+      "monthly_query_volume": 22000000,
+      "p95_query_latency_ms": 45.0,
+      "cache_hit_ratio": 0.65
+    },
+    "indexing": {
+      "daily_document_updates": 50000,
+      "full_rebuilds_per_month": 4,
+      "average_indexing_latency_minutes": 8.0
+    },
+    "utilization": {
+      "replica_utilization_percent": 72.0,
+      "partition_utilization_percent": 40.0,
+      "storage_utilization_percent": 50.0,
+      "semantic_queries_per_day": 180000,
+      "vector_queries_per_day": 0
+    }
+  },
+  "include_cost_signals": true,
+  "include_feature_assessment": true
+}

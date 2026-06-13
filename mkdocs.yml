@@ -18,6 +18,12 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - User Guide:
+    - Overview: user-guide/index.md
+    - Using the Chat UI: user-guide/chat-ui.md
+    - Understanding Results: user-guide/understanding-results.md
+    - Starter Scenarios: user-guide/scenarios.md
+    - Automation & Scripting: user-guide/automation.md
   - Architecture: architecture.md
   - API Reference:
     - Overview: api/index.md

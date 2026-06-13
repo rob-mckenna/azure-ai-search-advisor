@@ -1,0 +1,58 @@
+{
+  "configuration": {
+    "service_name": "woodgrove-knowledge-search",
+    "region": "westus2",
+    "capacity": {
+      "pricing_model": "dedicated",
+      "sku": "standard2",
+      "replica_count": 2,
+      "partition_count": 2,
+      "zone_redundancy_enabled": false
+    },
+    "features": {
+      "semantic_ranker_enabled": true,
+      "vector_search_enabled": true,
+      "ai_enrichment_enabled": true,
+      "knowledge_store_enabled": true
+    },
+    "index_topology": {
+      "index_count": 5,
+      "indexer_count": 5,
+      "skillset_count": 3,
+      "total_document_count": 2000000,
+      "total_index_size_gb": 95.0,
+      "vector_index_size_gb": 38.0
+    },
+    "security": {
+      "api_keys_enabled": false,
+      "managed_identity_enabled": true,
+      "private_endpoint_enabled": true,
+      "customer_managed_keys_enabled": true
+    },
+    "notes": ["RAG pipeline queries ~5 chunks per user question", "Documents re-indexed nightly"]
+  },
+  "metrics": {
+    "observation_window_days": 30,
+    "query": {
+      "average_queries_per_second": 12.0,
+      "peak_queries_per_second": 45.0,
+      "monthly_query_volume": 3100000,
+      "p95_query_latency_ms": 120.0,
+      "cache_hit_ratio": 0.28
+    },
+    "indexing": {
+      "daily_document_updates": 15000,
+      "full_rebuilds_per_month": 1,
+      "average_indexing_latency_minutes": 45.0
+    },
+    "utilization": {
+      "replica_utilization_percent": 55.0,
+      "partition_utilization_percent": 47.5,
+      "storage_utilization_percent": 66.0,
+      "semantic_queries_per_day": 250000,
+      "vector_queries_per_day": 250000
+    }
+  },
+  "include_cost_signals": true,
+  "include_feature_assessment": true
+}
