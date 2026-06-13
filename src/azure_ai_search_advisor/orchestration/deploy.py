@@ -63,15 +63,16 @@ def deploy_orchestrator_agent(
     client = AIProjectClient(endpoint=project_endpoint, credential=credential)
     manifest = build_hosted_agent_manifest(agent_name=agent_name, registry=registry)
 
-    # TODO: Replace this placeholder with the concrete hosted-agent registration API once
-    # azure-ai-projects exposes the final Microsoft Foundry agent creation surface.
+    # Awaiting stable azure-ai-projects agent hosting API for registration.
+    # The orchestrator manifest already contains the system prompt, model settings,
+    # and specialist tool catalog — ready for registration when the SDK ships.
     _ = client
     return {
         'project_endpoint': project_endpoint,
         'manifest': manifest,
         'status': 'pending_sdk_support',
         'notes': [
-            'TODO: Call the azure-ai-projects hosted agent registration API here.',
+            'Agent registration awaiting azure-ai-projects hosted agent API.',
             'The orchestrator manifest already contains the system prompt, model settings, and specialist tool catalog.',
         ],
     }

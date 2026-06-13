@@ -1,9 +1,11 @@
 """Application entrypoint for Azure AI Search Advisor."""
 
+import os
 from collections.abc import Mapping
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from azure_ai_search_advisor import __version__
@@ -39,12 +41,28 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Azure AI Search Advisor",
         version=__version__,
-        description="Scaffolded API for Azure AI Search optimization analysis and recommendations.",
+        description=(
+            "Analyzes Azure AI Search workloads to detect inefficiencies, model costs, "
+            "and generate actionable optimization recommendations. Supports both standalone "
+            "analysis and end-to-end advisory pipelines."
+        ),
         openapi_tags=[
-            {"name": "analysis", "description": "Workload analysis endpoints."},
-            {"name": "recommendations", "description": "Recommendation generation endpoints."},
-            {"name": "simulation", "description": "Scenario and pricing simulation endpoints."},
-            {"name": "health", "description": "Operational health endpoints."},
+            {
+                "name": "analysis",
+                "description": "Analyze Azure AI Search configurations for provisioning, SKU, and feature inefficiencies.",
+            },
+            {
+                "name": "recommendations",
+                "description": "Generate prioritized optimization recommendations with remediation steps.",
+            },
+            {
+                "name": "simulation",
+                "description": "Model cost scenarios comparing dedicated vs serverless pricing.",
+            },
+            {
+                "name": "health",
+                "description": "Operational health and readiness probe endpoints.",
+            },
         ],
     )
 
@@ -87,6 +105,18 @@ def create_app() -> FastAPI:
     app.include_router(recommend.router)
     app.include_router(simulate.router)
     app.include_router(health.router)
+
+    # CORS — allow the React dev server and configured origins
+    cors_origins = os.environ.get(
+        "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
+    ).split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[origin.strip() for origin in cors_origins],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     return app
 

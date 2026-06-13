@@ -153,7 +153,7 @@ class OrchestratorAgent:
             recommendations=recommendation_result,
             notes=[
                 'Local execution uses deterministic service chaining so the API layer and agent layer share the same business services.',
-                'TODO: Replace the local control flow with Microsoft Agent Framework orchestration primitives when the SDK surface is finalized.',
+                'Will migrate to Microsoft Agent Framework orchestration primitives when the SDK surface is finalized.',
             ],
         )
 

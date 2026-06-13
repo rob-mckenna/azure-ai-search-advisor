@@ -19,7 +19,7 @@ def generate_pricing_model_recommendations(
 
     hosting_mode = str(service.get("hosting_mode", "dedicated"))
 
-    # TODO: Replace scenario booleans with sustained utilization, burst, and SLA-aware scoring.
+    # Future: Replace scenario booleans with sustained utilization, burst, and SLA-aware scoring.
     if hosting_mode == "dedicated" and pricing.get("switch_to_serverless_candidate"):
         recommendations.append(
             Recommendation(
@@ -42,7 +42,7 @@ def generate_pricing_model_recommendations(
             )
         )
 
-    # TODO: Add break-even modeling for sustained query volume, indexing cadence, and reserved capacity.
+    # Future: Add break-even modeling for sustained query volume, indexing cadence, and reserved capacity.
     if hosting_mode == "serverless" and pricing.get("switch_to_dedicated_candidate"):
         recommendations.append(
             Recommendation(

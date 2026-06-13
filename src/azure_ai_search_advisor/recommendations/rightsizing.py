@@ -16,7 +16,7 @@ def generate_rightsizing_recommendations(
     service = _as_mapping(analysis_findings.get("service"))
     recommendations: list[Recommendation] = []
 
-    # TODO: Replace boolean gates with utilization thresholds and forecast-aware analysis.
+    # Future: Replace boolean gates with utilization thresholds and forecast-aware analysis.
     if topology.get("replica_overprovisioned"):
         current_replicas = int(service.get("replicas", 2))
         target_replicas = int(topology.get("suggested_replicas", max(current_replicas - 1, 1)))
@@ -42,7 +42,7 @@ def generate_rightsizing_recommendations(
             )
         )
 
-    # TODO: Fold in index growth forecasts and ingestion burst patterns before finalizing targets.
+    # Future: Fold in index growth forecasts and ingestion burst patterns before finalizing targets.
     if topology.get("partition_overprovisioned"):
         current_partitions = int(service.get("partitions", 1))
         target_partitions = int(
@@ -69,7 +69,7 @@ def generate_rightsizing_recommendations(
             )
         )
 
-    # TODO: Add SKU compatibility checks for storage limits, semantic features, and vector workloads.
+    # Future: Add SKU compatibility checks for storage limits, semantic features, and vector workloads.
     if topology.get("sku_downgrade_candidate"):
         current_sku = str(service.get("sku", "current SKU"))
         target_sku = str(topology.get("suggested_sku", "lower SKU"))

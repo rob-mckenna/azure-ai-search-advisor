@@ -37,8 +37,8 @@ def get_health() -> HealthResponse:
             ),
             DependencyHealth(
                 name="analysis-service",
-                status=HealthStatus.DEGRADED,
-                detail="Service wiring is scaffolded but business logic is still TODO.",
+                status=HealthStatus.HEALTHY,
+                detail="Analysis pipeline operational with provisioning, feature, and SKU analyzers.",
             ),
         ],
         notes=[

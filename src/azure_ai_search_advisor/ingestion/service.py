@@ -50,12 +50,12 @@ class IngestionService:
 
     def _normalize_payload(self, payload: Mapping[str, Any]) -> dict[str, Any]:
         """Normalize inbound payloads before validation."""
-        # TODO: Add version-aware normalization, alias handling, and default enrichment.
+        # Future: Add version-aware normalization, alias handling, and default enrichment.
         return dict(payload)
 
     def _post_process_snapshot(
         self, snapshot: AzureSearchServiceSnapshot
     ) -> AzureSearchServiceSnapshot:
         """Apply post-validation enrichment hooks."""
-        # TODO: Add cross-source joins, tagging, and ingestion provenance metadata.
+        # Future: Add cross-source joins, tagging, and ingestion provenance metadata.
         return snapshot

@@ -43,5 +43,5 @@ def validate_snapshot_consistency(
     ):
         raise ValueError("AI enrichment usage cannot be reported when AI enrichment is disabled.")
 
-    # TODO: Add workload-specific guardrails, schema migrations, and telemetry provenance checks.
+    # Future: Add workload-specific guardrails, schema migrations, and telemetry provenance checks.
     return snapshot

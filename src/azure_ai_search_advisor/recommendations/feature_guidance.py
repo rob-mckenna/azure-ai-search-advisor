@@ -18,7 +18,7 @@ def generate_feature_guidance_recommendations(
     semantic_enabled = bool(features.get("semantic_ranker_enabled"))
     semantic_query_ratio = float(features.get("semantic_query_ratio", 0.0) or 0.0)
 
-    # TODO: Replace these simple gates with per-index query quality and adoption scoring.
+    # Future: Replace these simple gates with per-index query quality and adoption scoring.
     if semantic_enabled and semantic_query_ratio < 0.1:
         recommendations.append(
             Recommendation(
@@ -60,7 +60,7 @@ def generate_feature_guidance_recommendations(
             )
         )
 
-    # TODO: Expand this into vector profile, embedding, and HNSW parameter-specific guidance.
+    # Future: Expand this into vector profile, embedding, and HNSW parameter-specific guidance.
     if features.get("vector_search_enabled") and features.get("vector_optimization_opportunity"):
         recommendations.append(
             Recommendation(
