@@ -294,14 +294,23 @@ def build_recommendation_inputs(
     topology: dict[str, Any] = {}
     features: dict[str, Any] = {}
     pricing: dict[str, Any] = {}
+    alerting: dict[str, Any] = {}
 
     if configuration is not None:
         service = {
+            "service_name": configuration.service_name,
             "replicas": configuration.capacity.replica_count,
             "partitions": configuration.capacity.partition_count,
             "sku": configuration.capacity.sku,
             "hosting_mode": configuration.capacity.pricing_model.value,
+            "indexer_count": configuration.index_topology.indexer_count,
         }
+        alerting.update(
+            {
+                "indexer_count": configuration.index_topology.indexer_count,
+                "indexer_monitoring_configured": False,
+            }
+        )
         features.update(
             {
                 "semantic_ranker_enabled": configuration.features.semantic_ranker_enabled,
@@ -338,6 +347,16 @@ def build_recommendation_inputs(
         ):
             topology["partition_overprovisioned"] = True
             topology["suggested_partitions"] = max(configuration.capacity.partition_count - 1, 1)
+        alerting.update(
+            {
+                "query_latency_p95_ms": metrics.query.p95_query_latency_ms,
+                "replica_utilization_percent": metrics.utilization.replica_utilization_percent,
+                "storage_utilization_percent": metrics.utilization.storage_utilization_percent,
+                "throttled_queries_per_day": 0.0,
+                "avg_queries_per_second": metrics.query.average_queries_per_second,
+                "avg_cpu_utilization_pct": metrics.utilization.replica_utilization_percent,
+            }
+        )
         if (
             configuration.capacity.pricing_model.value == DeploymentMode.DEDICATED.value
             and metrics.query.monthly_query_volume < 100_000
@@ -368,6 +387,15 @@ def build_recommendation_inputs(
             features.setdefault("semantic_ranker_enabled", True)
         if "vector" in combined_text:
             features.setdefault("vector_search_enabled", True)
+        if "latency" in combined_text:
+            alerting.setdefault("query_latency_p95_ms", metrics.query.p95_query_latency_ms if metrics is not None else 0.0)
+        if "throttl" in combined_text:
+            alerting["throttled_queries_detected"] = True
+        if "storage" in combined_text:
+            alerting.setdefault(
+                "storage_utilization_percent",
+                metrics.utilization.storage_utilization_percent if metrics is not None else 0.0,
+            )
 
     cost_data = _build_cost_data(cost_model_response)
     if analysis_cost_impact and not cost_model_response:
@@ -405,6 +433,7 @@ def build_recommendation_inputs(
             "topology": topology,
             "features": features,
             "pricing": pricing,
+            "alerting": alerting,
         },
         cost_data,
     )

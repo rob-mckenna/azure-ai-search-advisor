@@ -1,13 +1,31 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from jose import jwt
 from jose.utils import base64url_encode
 
 from azure_ai_search_advisor.api import auth
+from azure_ai_search_advisor.api.dependencies import get_response_cache
 from azure_ai_search_advisor.main import create_app
+
+
+def _history_db_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "data" / f"test-history-{uuid4().hex}.db"
+
+
+def _cleanup_history_db(path: Path) -> None:
+    for candidate in (
+        path,
+        path.with_suffix(f"{path.suffix}-journal"),
+        path.with_suffix(f"{path.suffix}-shm"),
+        path.with_suffix(f"{path.suffix}-wal"),
+    ):
+        if candidate.exists():
+            candidate.unlink()
 
 
 def _build_api_inputs(snapshot) -> tuple[dict, dict]:
@@ -104,6 +122,8 @@ def test_analyze_with_valid_payload_returns_findings(client, sample_snapshot) ->
     )
 
     assert response.status_code == 200
+    assert response.headers["X-Cache"] == "MISS"
+    assert response.headers["X-Cache-Key"]
     body = response.json()
     assert body["status"] == "completed"
     assert body["summary"]["finding_count"] >= 1
@@ -151,6 +171,72 @@ def test_recommend_returns_recommendations(client, sample_snapshot) -> None:
     assert len(body["recommendations"]) >= 1
 
 
+def test_analyze_records_history_and_exposes_trends(monkeypatch, sample_snapshot) -> None:
+    history_db_path = _history_db_path()
+    monkeypatch.setenv("HISTORY_DB_PATH", str(history_db_path))
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    client = TestClient(create_app())
+
+    try:
+        analyze_response = client.post(
+            "/analyze",
+            json={
+                "configuration": configuration,
+                "metrics": metrics,
+                "include_cost_signals": True,
+                "include_feature_assessment": True,
+            },
+        )
+        assert analyze_response.status_code == 200
+
+        history_response = client.get(f"/history/{configuration['service_name']}")
+        assert history_response.status_code == 200
+        history_body = history_response.json()
+        assert history_body["runs"]
+        assert history_body["runs"][0]["service_name"] == configuration["service_name"]
+        assert history_body["runs"][0]["finding_count"] >= 1
+        assert history_body["runs"][0]["recommendation_count"] == 0
+
+        trends_response = client.get(f"/history/{configuration['service_name']}/trends")
+        assert trends_response.status_code == 200
+        trends_body = trends_response.json()
+        assert len(trends_body["finding_count_over_time"]) == 1
+        assert trends_body["finding_count_over_time"][0]["finding_count"] >= 1
+    finally:
+        _cleanup_history_db(history_db_path)
+
+
+def test_recommend_end_to_end_records_cost_history(monkeypatch, sample_snapshot) -> None:
+    history_db_path = _history_db_path()
+    monkeypatch.setenv("HISTORY_DB_PATH", str(history_db_path))
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    client = TestClient(create_app())
+
+    try:
+        recommend_response = client.post(
+            "/recommend",
+            json={
+                "configuration": configuration,
+                "metrics": metrics,
+                "preferences": {
+                    "max_recommendations": 5,
+                    "prioritize_for": ["cost", "availability"],
+                    "include_remediation_steps": True,
+                },
+            },
+        )
+        assert recommend_response.status_code == 200
+
+        history_response = client.get(f"/history/{configuration['service_name']}")
+        assert history_response.status_code == 200
+        history_body = history_response.json()
+        assert history_body["runs"]
+        assert history_body["runs"][0]["dedicated_monthly_usd"] is not None
+        assert history_body["runs"][0]["serverless_monthly_usd"] is not None
+        assert history_body["runs"][0]["recommendation_count"] >= 1
+    finally:
+        _cleanup_history_db(history_db_path)
+
 
 def test_simulate_returns_cost_comparison(client, sample_snapshot) -> None:
     configuration, metrics = _build_api_inputs(sample_snapshot)
@@ -179,11 +265,78 @@ def test_simulate_returns_cost_comparison(client, sample_snapshot) -> None:
     )
 
     assert response.status_code == 200
+    assert response.headers["X-Cache"] == "MISS"
+    assert response.headers["X-Cache-Key"]
     body = response.json()
     assert body["status"] == "completed"
     assert body["comparison"]["current_estimate"]["monthly_total"] > 0
     assert body["comparison"]["proposed_estimate"]["monthly_total"] > 0
     assert body["comparison"]["monthly_delta"] < 0
+
+
+def test_analyze_returns_cache_hit_when_enabled(monkeypatch, sample_snapshot) -> None:
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    monkeypatch.setenv("CACHE_ENABLED", "true")
+    monkeypatch.setenv("CACHE_TTL_SECONDS", "300")
+    monkeypatch.setenv("CACHE_MAX_ENTRIES", "100")
+    get_response_cache.cache_clear()
+    client = TestClient(create_app())
+    payload = {
+        "configuration": configuration,
+        "metrics": metrics,
+        "include_cost_signals": True,
+        "include_feature_assessment": True,
+    }
+
+    first_response = client.post("/analyze", json=payload)
+    second_response = client.post("/analyze", json=payload)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.headers["X-Cache"] == "MISS"
+    assert second_response.headers["X-Cache"] == "HIT"
+    assert first_response.headers["X-Cache-Key"] == second_response.headers["X-Cache-Key"]
+    assert first_response.json() == second_response.json()
+    get_response_cache.cache_clear()
+
+
+def test_simulate_returns_cache_hit_when_enabled(monkeypatch, sample_snapshot) -> None:
+    configuration, metrics = _build_api_inputs(sample_snapshot)
+    monkeypatch.setenv("CACHE_ENABLED", "true")
+    monkeypatch.setenv("CACHE_TTL_SECONDS", "300")
+    monkeypatch.setenv("CACHE_MAX_ENTRIES", "100")
+    get_response_cache.cache_clear()
+    client = TestClient(create_app())
+    payload = {
+        "current_configuration": configuration,
+        "current_metrics": metrics,
+        "proposed_changes": [
+            {
+                "change_id": "reduce-replicas",
+                "target": "capacity",
+                "attribute": "replica_count",
+                "current_value": configuration["capacity"]["replica_count"],
+                "proposed_value": configuration["capacity"]["replica_count"] - 1,
+                "rationale": "Observed load is low relative to current replica capacity.",
+            }
+        ],
+        "assumptions": {
+            "pricing_horizon_days": 30,
+            "currency": "USD",
+            "notes": ["Test scenario for reducing dedicated capacity."],
+        },
+    }
+
+    first_response = client.post("/simulate", json=payload)
+    second_response = client.post("/simulate", json=payload)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.headers["X-Cache"] == "MISS"
+    assert second_response.headers["X-Cache"] == "HIT"
+    assert first_response.headers["X-Cache-Key"] == second_response.headers["X-Cache-Key"]
+    assert first_response.json() == second_response.json()
+    get_response_cache.cache_clear()
 
 
 def _build_valid_bearer_token() -> tuple[str, dict]:

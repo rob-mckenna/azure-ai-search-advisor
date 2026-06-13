@@ -31,6 +31,7 @@ class CurrentUser:
     name: str
     oid: str | None
     roles: tuple[str, ...]
+    email: str | None = None
 
 
 class _JwksCache:
@@ -202,6 +203,7 @@ def _mock_current_user() -> CurrentUser:
         name="Local Development User",
         oid="local-development-oid",
         roles=("developer",),
+        email="local-development@example.test",
     )
 
 
@@ -229,4 +231,9 @@ def get_current_user(
         name=str(claims.get("name") or claims.get("preferred_username") or "Authenticated User"),
         oid=str(claims["oid"]) if claims.get("oid") else None,
         roles=_normalize_roles(claims.get("roles")),
+        email=(
+            str(claims.get("preferred_username") or claims.get("email"))
+            if claims.get("preferred_username") or claims.get("email")
+            else None
+        ),
     )

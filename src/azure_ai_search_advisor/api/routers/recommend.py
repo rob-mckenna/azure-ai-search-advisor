@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status
 from pydantic import ValidationError
 
 from azure_ai_search_advisor.analysis.service import AnalysisRequest, AnalysisService
@@ -14,8 +14,10 @@ from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
 from azure_ai_search_advisor.api.dependencies import (
     get_analysis_service,
     get_cost_modeling_service,
+    get_history_service,
     get_ingestion_service,
     get_recommendation_service,
+    get_tenant_db,
 )
 from azure_ai_search_advisor.api.rate_limit import check_rate_limit
 from azure_ai_search_advisor.api.schemas import (
@@ -31,8 +33,11 @@ from azure_ai_search_advisor.api.service_adapters import (
     map_analysis_result_to_response,
     map_recommendation_report,
 )
+from azure_ai_search_advisor.core.tenancy import get_tenant_context
 from azure_ai_search_advisor.cost_modeling.service import CostModelingService
 from azure_ai_search_advisor.ingestion.service import IngestionService
+from azure_ai_search_advisor.repositories.history_service import HistoryService, compute_configuration_hash
+from azure_ai_search_advisor.repositories.tenant_db import TenantDbRepository
 from azure_ai_search_advisor.recommendations.service import RecommendationService
 
 router = APIRouter(
@@ -178,15 +183,18 @@ def recommend_optimizations(
         RecommendRequest,
         Body(openapi_examples=RECOMMEND_REQUEST_EXAMPLES),
     ],
+    background_tasks: BackgroundTasks,
     current_user: CurrentUser = Depends(get_current_user),
+    tenant_db: TenantDbRepository = Depends(get_tenant_db),
     ingestion_service: IngestionService = Depends(get_ingestion_service),
     analysis_service: AnalysisService = Depends(get_analysis_service),
     cost_modeling_service: CostModelingService = Depends(get_cost_modeling_service),
     recommendation_service: RecommendationService = Depends(get_recommendation_service),
+    history_service: HistoryService = Depends(get_history_service),
 ) -> RecommendResponse:
     """Generate optimization recommendations for an Azure AI Search workload."""
 
-    _ = current_user
+    tenant_context = get_tenant_context(current_user, tenant_db=tenant_db, allow_local_fallback=True)
     source = (
         RecommendationSource.ANALYSIS_INPUT
         if request.analysis is not None and request.configuration is None
@@ -194,6 +202,7 @@ def recommend_optimizations(
     )
     analysis_response = request.analysis
     cost_model_response = None
+    snapshot = None
 
     if request.configuration is not None and request.metrics is not None:
         try:
@@ -243,7 +252,7 @@ def recommend_optimizations(
             include_remediation_steps=request.preferences.include_remediation_steps,
             max_recommendations=request.preferences.max_recommendations,
         )
-        return RecommendResponse(
+        response = RecommendResponse(
             request_id=f"rec_{uuid4().hex}",
             status="completed",
             generated_at=datetime.now(timezone.utc),
@@ -252,6 +261,19 @@ def recommend_optimizations(
             summary=report.summary,
             notes=notes + (["Built from raw configuration and metrics."] if source == RecommendationSource.END_TO_END else []),
         )
+        if source == RecommendationSource.END_TO_END and request.configuration is not None and snapshot is not None:
+            background_tasks.add_task(
+                history_service.record_analysis,
+                request.configuration.service_name,
+                analysis_response,
+                cost_model_response,
+                response.recommendations,
+                tenant_id=str(tenant_context.current_tenant.id),
+                subscription_id=snapshot.configuration.subscription_id,
+                resource_group=snapshot.configuration.resource_group,
+                configuration_hash=compute_configuration_hash(request.configuration),
+            )
+        return response
     except Exception as exc:  # pragma: no cover - defensive API boundary
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

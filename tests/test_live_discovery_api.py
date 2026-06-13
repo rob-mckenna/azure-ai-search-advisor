@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from azure_ai_search_advisor.api.dependencies import get_live_ingestion_service
+from azure_ai_search_advisor.core.resilience import CircuitBreakerOpenError
 from azure_ai_search_advisor.ingestion.azure_resource_graph import DiscoveredSearchService
 from azure_ai_search_advisor.ingestion.live_exceptions import AzureCredentialsUnavailableError
 from azure_ai_search_advisor.main import create_app
@@ -93,3 +94,22 @@ def test_discover_returns_503_when_credentials_are_unavailable() -> None:
 
     assert response.status_code == 503
     assert response.json()["message"] == "Azure credentials are unavailable."
+
+
+def test_discover_returns_retry_after_when_circuit_is_open() -> None:
+    app = create_app()
+
+    class _CircuitOpenService:
+        def discover_services(self, subscription_id: str | None = None, resource_group: str | None = None):
+            _ = (subscription_id, resource_group)
+            raise CircuitBreakerOpenError(29)
+
+    app.dependency_overrides[get_live_ingestion_service] = lambda: _CircuitOpenService()
+
+    response = TestClient(app).get("/discover")
+
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "29"
+    assert response.json()["message"] == (
+        "Live Azure ingestion temporarily unavailable due to repeated failures. Retry after 29s."
+    )

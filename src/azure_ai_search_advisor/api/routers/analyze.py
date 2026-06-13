@@ -4,16 +4,26 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Response, status
 from pydantic import ValidationError
 
 from azure_ai_search_advisor.analysis.service import AnalysisRequest, AnalysisService
 from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
-from azure_ai_search_advisor.api.dependencies import get_analysis_service, get_ingestion_service
+from azure_ai_search_advisor.api.cache import ResponseCache
+from azure_ai_search_advisor.api.dependencies import (
+    get_analysis_service,
+    get_history_service,
+    get_ingestion_service,
+    get_response_cache,
+    get_tenant_db,
+)
 from azure_ai_search_advisor.api.rate_limit import check_rate_limit
 from azure_ai_search_advisor.api.schemas import AnalyzeRequest, AnalyzeResponse, ErrorResponse
 from azure_ai_search_advisor.api.service_adapters import build_snapshot_payload, map_analysis_result_to_response
+from azure_ai_search_advisor.core.tenancy import get_tenant_context
 from azure_ai_search_advisor.ingestion.service import IngestionService
+from azure_ai_search_advisor.repositories.history_service import HistoryService, compute_configuration_hash
+from azure_ai_search_advisor.repositories.tenant_db import TenantDbRepository
 
 router = APIRouter(
     prefix="/analyze",
@@ -113,13 +123,34 @@ def analyze_search_configuration(
         AnalyzeRequest,
         Body(openapi_examples=ANALYZE_REQUEST_EXAMPLES),
     ],
+    background_tasks: BackgroundTasks,
+    response: Response,
     current_user: CurrentUser = Depends(get_current_user),
+    tenant_db: TenantDbRepository = Depends(get_tenant_db),
     ingestion_service: IngestionService = Depends(get_ingestion_service),
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    response_cache: ResponseCache = Depends(get_response_cache),
+    history_service: HistoryService = Depends(get_history_service),
 ) -> AnalyzeResponse:
     """Analyze an Azure AI Search workload."""
 
-    _ = current_user
+    tenant_context = get_tenant_context(current_user, tenant_db=tenant_db, allow_local_fallback=True)
+    cache_key = response_cache.build_key(request.model_dump(mode="json"))
+    response.headers["X-Cache-Key"] = cache_key
+    cached_response = response_cache.get(cache_key)
+    if cached_response is not None:
+        response.headers["X-Cache"] = "HIT"
+        background_tasks.add_task(
+            history_service.record_analysis,
+            request.configuration.service_name,
+            cached_response,
+            None,
+            [],
+            tenant_id=str(tenant_context.current_tenant.id),
+            configuration_hash=compute_configuration_hash(request.configuration),
+        )
+        return cached_response
+
     try:
         snapshot = ingestion_service.ingest_payload(
             build_snapshot_payload(request.configuration, request.metrics)
@@ -142,7 +173,21 @@ def analyze_search_configuration(
                 metrics=snapshot.metrics,
             )
         )
-        return map_analysis_result_to_response(result)
+        payload = map_analysis_result_to_response(result)
+        response_cache.set(cache_key, payload)
+        response.headers["X-Cache"] = "MISS"
+        background_tasks.add_task(
+            history_service.record_analysis,
+            request.configuration.service_name,
+            payload,
+            None,
+            [],
+            tenant_id=str(tenant_context.current_tenant.id),
+            subscription_id=snapshot.configuration.subscription_id,
+            resource_group=snapshot.configuration.resource_group,
+            configuration_hash=compute_configuration_hash(request.configuration),
+        )
+        return payload
     except Exception as exc:  # pragma: no cover - defensive API boundary
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

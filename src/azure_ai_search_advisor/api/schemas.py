@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -376,6 +377,99 @@ class DiscoverResponse(ApiModel):
     )
 
 
+class TenantRole(StrEnum):
+    """Tenant membership role."""
+
+    ADMIN = "admin"
+    MEMBER = "member"
+    VIEWER = "viewer"
+
+
+class TenantSummary(ApiModel):
+    """Tenant metadata returned by tenant APIs."""
+
+    id: UUID = Field(description="Tenant identifier.")
+    name: str = Field(description="Tenant display name.")
+    created_at: datetime = Field(description="Tenant creation timestamp.")
+
+
+class TenantContextResponse(ApiModel):
+    """Resolved tenant context for the current caller."""
+
+    tenant: TenantSummary = Field(description="Tenant resolved for the current request.")
+    current_user_oid: str | None = Field(
+        default=None,
+        description="Microsoft Entra object id used to resolve the current membership.",
+    )
+    role: TenantRole = Field(description="Effective role for the current user.")
+    permissions: list[str] = Field(
+        default_factory=list,
+        description="Tenant-scoped permissions granted to the current user.",
+    )
+
+
+class CreateTenantRequest(ApiModel):
+    """Payload for POST /tenant."""
+
+    name: str = Field(min_length=1, description="Display name for the new tenant.")
+
+
+class TenantMemberRequest(ApiModel):
+    """Payload for POST /tenant/members."""
+
+    user_oid: str = Field(min_length=1, description="Microsoft Entra object id for the member.")
+    role: TenantRole = Field(description="Role to assign to the member.")
+    display_name: str | None = Field(default=None, description="Optional display name for the member.")
+    email: str | None = Field(default=None, description="Optional email address for the member.")
+
+
+class TenantMemberResponse(ApiModel):
+    """Tenant membership returned by the API."""
+
+    id: UUID = Field(description="Membership identifier.")
+    tenant_id: UUID = Field(description="Tenant identifier for the membership.")
+    user_oid: str = Field(description="Microsoft Entra object id for the member.")
+    role: TenantRole = Field(description="Assigned tenant role.")
+    display_name: str | None = Field(default=None, description="Optional display name for the member.")
+    email: str | None = Field(default=None, description="Optional email address for the member.")
+    added_at: datetime | None = Field(default=None, description="When the member was added.")
+
+
+class TenantMembersResponse(ApiModel):
+    """List of tenant members."""
+
+    members: list[TenantMemberResponse] = Field(default_factory=list, description="Tenant members.")
+
+
+class ServiceRegistrationRequest(ApiModel):
+    """Payload for POST /tenant/services."""
+
+    subscription_id: str = Field(min_length=1, description="Azure subscription identifier.")
+    resource_group: str = Field(min_length=1, description="Azure resource group name.")
+    service_name: str = Field(min_length=1, description="Azure AI Search service name.")
+
+
+class ServiceRegistrationResponse(ApiModel):
+    """Tenant service registration returned by the API."""
+
+    id: UUID = Field(description="Service registration identifier.")
+    tenant_id: UUID = Field(description="Tenant identifier owning the registration.")
+    subscription_id: str = Field(description="Azure subscription identifier.")
+    resource_group: str = Field(description="Azure resource group name.")
+    service_name: str = Field(description="Azure AI Search service name.")
+    added_by: str = Field(description="User who registered the service.")
+    added_at: datetime = Field(description="When the service was registered.")
+
+
+class TenantServicesResponse(ApiModel):
+    """List of tenant-registered Azure AI Search services."""
+
+    services: list[ServiceRegistrationResponse] = Field(
+        default_factory=list,
+        description="Azure AI Search services registered for the current tenant.",
+    )
+
+
 class AnalyzeRequest(ApiModel):
     """Payload for POST /analyze."""
 
@@ -723,6 +817,89 @@ class RecommendResponse(ApiModel):
     notes: list[str] = Field(
         default_factory=list,
         description="Implementation notes or caveats for the client.",
+    )
+
+
+class HistoricalRunSummary(ApiModel):
+    """Stored summary for a historical analysis run."""
+
+    id: str = Field(description="Unique identifier for the stored analysis run.")
+    service_name: str = Field(description="Azure AI Search service name.")
+    subscription_id: str = Field(description="Azure subscription identifier.")
+    resource_group: str = Field(description="Azure resource group containing the service.")
+    run_at: datetime = Field(description="Timestamp when the analysis run was recorded.")
+    finding_count: int = Field(ge=0, description="Number of findings captured for the run.")
+    highest_severity: SeverityLevel = Field(description="Highest severity captured for the run.")
+    configuration_hash: str = Field(description="Stable hash of the analyzed configuration.")
+    dedicated_monthly_usd: float | None = Field(
+        default=None,
+        description="Estimated dedicated monthly cost for the run, when available.",
+    )
+    serverless_monthly_usd: float | None = Field(
+        default=None,
+        description="Estimated serverless monthly cost for the run, when available.",
+    )
+    lower_cost_option: PricingModel | None = Field(
+        default=None,
+        description="Lower-cost option observed for the stored run, when available.",
+    )
+    recommendation_count: int = Field(
+        ge=0,
+        default=0,
+        description="Number of recommendations stored for the run.",
+    )
+
+
+class ServiceHistoryResponse(ApiModel):
+    """Historical analysis runs for a single service."""
+
+    service_name: str = Field(description="Azure AI Search service name.")
+    days: int = Field(ge=1, description="Window used to filter historical runs.")
+    limit: int = Field(ge=1, description="Maximum number of runs requested.")
+    runs: list[HistoricalRunSummary] = Field(
+        default_factory=list,
+        description="Historical runs ordered from newest to oldest.",
+    )
+
+
+class FindingCountTrendPoint(ApiModel):
+    """Finding-count trend point."""
+
+    run_at: datetime = Field(description="Timestamp for the recorded analysis run.")
+    finding_count: int = Field(ge=0, description="Finding count captured at that time.")
+
+
+class CostTrendPoint(ApiModel):
+    """Cost trend point."""
+
+    run_at: datetime = Field(description="Timestamp for the recorded analysis run.")
+    dedicated_monthly_usd: float | None = Field(
+        default=None,
+        description="Estimated dedicated monthly cost for that run.",
+    )
+    serverless_monthly_usd: float | None = Field(
+        default=None,
+        description="Estimated serverless monthly cost for that run.",
+    )
+    lower_cost_option: PricingModel | None = Field(
+        default=None,
+        description="Lower-cost option observed for that run.",
+    )
+
+
+class ServiceHistoryTrendsResponse(ApiModel):
+    """Historical trend data for a single service."""
+
+    service_name: str = Field(description="Azure AI Search service name.")
+    days: int = Field(ge=1, description="Window used to filter trend data.")
+    limit: int = Field(ge=1, description="Maximum number of trend points requested.")
+    finding_count_over_time: list[FindingCountTrendPoint] = Field(
+        default_factory=list,
+        description="Finding count trend ordered from oldest to newest.",
+    )
+    cost_over_time: list[CostTrendPoint] = Field(
+        default_factory=list,
+        description="Cost trend ordered from oldest to newest.",
     )
 
 

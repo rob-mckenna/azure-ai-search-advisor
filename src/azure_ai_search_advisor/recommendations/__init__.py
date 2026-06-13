@@ -1,5 +1,8 @@
 """Recommendations domain package."""
 
+from azure_ai_search_advisor.recommendations.alerting import (
+    generate_alerting_recommendations,
+)
 from azure_ai_search_advisor.recommendations.feature_guidance import (
     generate_feature_guidance_recommendations,
 )
@@ -13,6 +16,7 @@ from azure_ai_search_advisor.recommendations.service import RecommendationServic
 
 __all__ = [
     "RecommendationService",
+    "generate_alerting_recommendations",
     "generate_feature_guidance_recommendations",
     "generate_pricing_model_recommendations",
     "generate_rightsizing_recommendations",

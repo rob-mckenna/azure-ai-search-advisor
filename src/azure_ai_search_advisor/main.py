@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from azure_ai_search_advisor import __version__
 from azure_ai_search_advisor.api.middleware import CorrelationIdMiddleware
-from azure_ai_search_advisor.api.routers import analyze, discover, health, recommend, simulate
+from azure_ai_search_advisor.api.routers import analyze, discover, health, history, recommend, simulate, tenant
 from azure_ai_search_advisor.api.schemas import ErrorDetail, ErrorResponse
 from azure_ai_search_advisor.core.logging import configure_logging
 
@@ -70,6 +70,14 @@ def create_app() -> FastAPI:
                 "name": "discovery",
                 "description": "Discover and analyze live Azure AI Search services using Azure credentials.",
             },
+            {
+                "name": "history",
+                "description": "Retrieve stored analysis history and trend data for Azure AI Search services.",
+            },
+            {
+                "name": "tenancy",
+                "description": "Manage tenant membership and tenant-scoped Azure AI Search service registrations.",
+            },
         ],
     )
 
@@ -112,9 +120,11 @@ def create_app() -> FastAPI:
 
     app.include_router(analyze.router)
     app.include_router(discover.router)
+    app.include_router(history.router)
     app.include_router(recommend.router)
     app.include_router(simulate.router)
     app.include_router(health.router)
+    app.include_router(tenant.router)
 
     # CORS — allow the React dev server and configured origins
     cors_origins = os.environ.get(

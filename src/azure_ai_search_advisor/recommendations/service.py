@@ -4,6 +4,9 @@ from collections.abc import Mapping
 from typing import Any
 
 from azure_ai_search_advisor.models.recommendations import Recommendation, RecommendationReport
+from azure_ai_search_advisor.recommendations.alerting import (
+    generate_alerting_recommendations,
+)
 from azure_ai_search_advisor.recommendations.feature_guidance import (
     generate_feature_guidance_recommendations,
 )
@@ -33,6 +36,7 @@ class RecommendationService:
         recommendations.extend(
             generate_pricing_model_recommendations(analysis_findings, cost_data)
         )
+        recommendations.extend(generate_alerting_recommendations(analysis_findings, cost_data))
 
         recommendations.sort(key=self._priority_sort_key)
 

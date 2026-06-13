@@ -1,0 +1,54 @@
+site_name: Azure AI Search Advisor
+site_description: Analyze Azure AI Search workloads, optimize costs, and generate actionable recommendations
+repo_url: https://github.com/rob-mckenna/azure-ai-search-advisor
+repo_name: rob-mckenna/azure-ai-search-advisor
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - API Reference:
+    - Overview: api/index.md
+    - Analyze: api/analyze.md
+    - Recommend: api/recommend.md
+    - Simulate: api/simulate.md
+    - Discover: api/discover.md
+    - History: api/history.md
+  - Deployment:
+    - Overview: deployment/index.md
+    - Azure Developer CLI: deployment/azd.md
+    - Bicep: deployment/bicep.md
+    - Terraform: deployment/terraform.md
+    - Docker: deployment/docker.md
+  - UI Development: ui/index.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid-init.js

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
 from pydantic import ValidationError
 
 from azure_ai_search_advisor.api.auth import CurrentUser, get_current_user
-from azure_ai_search_advisor.api.dependencies import get_cost_modeling_service
+from azure_ai_search_advisor.api.cache import ResponseCache
+from azure_ai_search_advisor.api.dependencies import get_cost_modeling_service, get_response_cache
 from azure_ai_search_advisor.api.rate_limit import check_rate_limit
 from azure_ai_search_advisor.api.schemas import ErrorResponse, SimulateRequest, SimulateResponse
 from azure_ai_search_advisor.api.service_adapters import (
@@ -138,12 +139,21 @@ def simulate_cost_and_capacity(
         SimulateRequest,
         Body(openapi_examples=SIMULATE_REQUEST_EXAMPLES),
     ],
+    response: Response,
     current_user: CurrentUser = Depends(get_current_user),
     cost_modeling_service: CostModelingService = Depends(get_cost_modeling_service),
+    response_cache: ResponseCache = Depends(get_response_cache),
 ) -> SimulateResponse:
     """Simulate cost and capacity scenarios for Azure AI Search."""
 
     _ = current_user
+    cache_key = response_cache.build_key(request.model_dump(mode="json"))
+    response.headers["X-Cache-Key"] = cache_key
+    cached_response = response_cache.get(cache_key)
+    if cached_response is not None:
+        response.headers["X-Cache"] = "HIT"
+        return cached_response
+
     try:
         if request.cost_model_request is not None:
             cost_model = cost_modeling_service.simulate(request.cost_model_request)
@@ -151,7 +161,7 @@ def simulate_cost_and_capacity(
                 cost_model,
                 currency=request.assumptions.currency,
             )
-            return build_simulate_response(
+            payload = build_simulate_response(
                 current_cost_model=cost_model,
                 proposed_cost_model=None,
                 current_estimate=current_estimate,
@@ -162,6 +172,9 @@ def simulate_cost_and_capacity(
                     "Compared dedicated and serverless pricing models from the submitted cost model request."
                 ],
             )
+            response_cache.set(cache_key, payload)
+            response.headers["X-Cache"] = "MISS"
+            return payload
 
         if request.current_configuration is None:
             raise HTTPException(
@@ -202,7 +215,7 @@ def simulate_cost_and_capacity(
             pricing_model=proposed_pricing_model,
             currency=request.assumptions.currency,
         )
-        return build_simulate_response(
+        payload = build_simulate_response(
             current_cost_model=current_cost_model,
             proposed_cost_model=proposed_cost_model,
             current_estimate=current_estimate,
@@ -211,6 +224,9 @@ def simulate_cost_and_capacity(
             notes=request.assumptions.notes
             + [f"Processed {len(request.proposed_changes)} proposed change(s)."],
         )
+        response_cache.set(cache_key, payload)
+        response.headers["X-Cache"] = "MISS"
+        return payload
     except HTTPException:
         raise
     except (ValidationError, ValueError) as exc:

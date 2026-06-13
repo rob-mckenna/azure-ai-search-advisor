@@ -52,6 +52,10 @@ infra/terraform/terraform.tfvars
 # Docker
 .docker/
 
+# Historical tracking
+data/history.db
+data/tenants.db
+
 # Squad: ignore runtime state (logs, inbox, sessions)
 .squad/orchestration-log/
 .squad/log/
@@ -61,3 +65,4 @@ infra/terraform/terraform.tfvars
 .squad/.cache/
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
+site/

@@ -6,9 +6,15 @@ import os
 
 from azure.identity import DefaultAzureCredential
 
+from azure_ai_search_advisor.core.resilience import CircuitBreaker, retry
 from azure_ai_search_advisor.ingestion.azure_resource_graph import (
     AzureResourceGraphSearchDiscoveryClient,
     DiscoveredSearchService,
+)
+from azure_ai_search_advisor.ingestion.live_exceptions import (
+    AzureCredentialsUnavailableError,
+    AzureLiveIngestionError,
+    AzureSearchServiceNotFoundError,
 )
 from azure_ai_search_advisor.ingestion.azure_search_management import AzureSearchManagementClientAdapter
 from azure_ai_search_advisor.models import AzureSearchServiceSnapshot
@@ -29,6 +35,11 @@ class LiveIngestionService:
         self._search_management_client = search_management_client or AzureSearchManagementClientAdapter(
             credential=credential
         )
+        self._circuit_breaker = CircuitBreaker(
+            failure_threshold=5,
+            recovery_timeout=30.0,
+            record_failure=self._should_record_failure,
+        )
 
     def discover_services(
         self,
@@ -38,7 +49,8 @@ class LiveIngestionService:
         """List Azure AI Search services accessible to the current caller."""
 
         effective_subscription_id = subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID")
-        return self._resource_graph_client.discover_services(
+        return self._circuit_breaker.call(
+            self._discover_services_with_retry,
             subscription_id=effective_subscription_id,
             resource_group=resource_group,
         )
@@ -51,8 +63,42 @@ class LiveIngestionService:
     ) -> AzureSearchServiceSnapshot:
         """Fetch a live Azure AI Search snapshot via the management API."""
 
+        return self._circuit_breaker.call(
+            self._ingest_live_service_with_retry,
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            service_name=service_name,
+        )
+
+    @retry()
+    def _discover_services_with_retry(
+        self,
+        *,
+        subscription_id: str | None,
+        resource_group: str | None,
+    ) -> list[DiscoveredSearchService]:
+        return self._resource_graph_client.discover_services(
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+        )
+
+    @retry()
+    def _ingest_live_service_with_retry(
+        self,
+        *,
+        subscription_id: str,
+        resource_group: str,
+        service_name: str,
+    ) -> AzureSearchServiceSnapshot:
         return self._search_management_client.ingest_service(
             subscription_id=subscription_id,
             resource_group=resource_group,
             service_name=service_name,
+        )
+
+    @staticmethod
+    def _should_record_failure(exc: BaseException) -> bool:
+        return isinstance(exc, AzureLiveIngestionError) and not isinstance(
+            exc,
+            (AzureCredentialsUnavailableError, AzureSearchServiceNotFoundError),
         )
